@@ -1,6 +1,8 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import scrapeLoginPage from "./loginPage";
+import ScrapeError from "./scrapeError";
 
 const port = 3000;
 const users = ["Adam", "Betty", "Cancer"];
@@ -16,6 +18,18 @@ app.use(express.json());
 
 app.get("/api/hello", (req, res) => {
   res.json({ message: "hello!" });
+});
+
+app.get("/api/test", async (req, res) => {
+  try {
+    res.send(await scrapeLoginPage());
+  } catch (e) {
+    if (e instanceof ScrapeError) {
+      res.send(`Error while web scraping: ${e.message()}`);
+    } else {
+      throw e;
+    }
+  }
 });
 
 app.listen(port, () => console.log(`api: http://localhost:${port}`));
