@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import scrapeLoginPage from "./loginPage";
 import ScrapeError from "./scrapeError";
+import signIn from "./signIn";
 
 const port = 3000;
 const users = ["Adam", "Betty", "Cancer"];
@@ -22,6 +23,12 @@ app.get("/api/hello", (req, res) => {
 
 app.get("/api/test", async (req, res) => {
   try {
+    scrapeLoginPage().then(result =>
+      signIn(
+        result.cookie,
+        
+      )
+    )
     res.send(await scrapeLoginPage());
   } catch (e) {
     if (e instanceof ScrapeError) {

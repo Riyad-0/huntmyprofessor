@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import ScrapeError from "./scrapeError";
+import cookieName from "./cookieName";
 
 const requestData = {
   url: "https://www.hunter.cuny.edu/myprof",
@@ -21,41 +22,78 @@ const requestData = {
   }
 };
 
-const loginPageErrorMessage = `unable to find expected HTML elements in the login
-page. The login page may have changed since this web scraper was last
+const loginPageHTMLErrorMessage = `expected HTML elements were not found in the
+login page. The login page may have changed since this web scraper was last
 updated.`;
 
-class LoginPageError extends ScrapeError {
+const loginPageCookieErrorMessage = `expected cookie was not set after
+accessing the login page. The login page may have changed since this web scraper was last
+updated.`;
+
+class HTMLError extends ScrapeError {
   message(): string {
-    return loginPageErrorMessage;
+    return loginPageHTMLErrorMessage;
   }
 }
 
+class CookieError extends ScrapeError {
+  message(): string {
+    return loginPageCookieErrorMessage;
+  }
+}
+
+interface RawResponseData {
+  text: string,
+  cookies: string[]
+}
+
 interface ResponseData {
+  cookie: string,
   pInstance: string,
   pPageSubmissionId: string,
   pPageItemsProtected: string
 }
 
-async function sendRequest(): Promise<string> {
+async function sendRequest(): Promise<RawResponseData> {
   const res = await fetch(requestData.url, { headers: requestData.headers });
-  return await res.text();
+  const text = await res.text();
+  const cookies = res.headers.getSetCookie()
+  return { text, cookies };
 }
 
-async function parseResponse(responseText: string): Promise<ResponseData> {
-  const $ = cheerio.load(responseText);
+async function parseResponse(rawResponseData: RawResponseData): Promise<ResponseData> {
+  const $ = cheerio.load(rawResponseData.text);
   const pInstance = $("#pInstance").val();
   const pPageSubmissionId = $("#pPageSubmissionId").val();
   const pPageItemsProtected = $("#pPageItemsProtected").val();
   if (typeof pInstance !== "string" || typeof pPageSubmissionId !== "string" || typeof pPageItemsProtected !== "string") {
-    throw new LoginPageError();
+    throw new HTMLError();
+  }
+  const cookie = rawResponseData.cookies.find(cookie => cookie.startsWith(cookieName + "="));
+  if (cookie === undefined) {
+    throw new CookieError();
   }
   return {
+    cookie,
     pInstance,
     pPageSubmissionId,
     pPageItemsProtected
   };
 }
+
+// async function parseCookie(cookies: string[]): Promise<string> {
+//   for (const cookie of cookies) {
+//     const split = cookie.split("=", 2);
+//     if (split[0] === cookieName) {
+//       const cookieValue = cookieName[1];
+//       if (cookieValue !== undefined) {
+//         return cookieValue;
+//       }
+//       break;
+//     }
+//   }
+//   throw new CookieError();
+// }
 
 async function scrapeLoginPage(): Promise<ResponseData> {
   const responseText = await sendRequest();
