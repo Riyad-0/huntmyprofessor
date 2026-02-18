@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import ScrapeError from "./scrapeError";
 import parseCookie from "./parseCookie";
+import log from "./log";
 
 interface Input {
   cookie: string,
@@ -103,6 +104,8 @@ function fillRequestData({
 
 async function sendRequest(input: Input): Promise<RawResponseData> {
   const requestData = fillRequestData(input);
+  log(JSON.stringify(requestData, null, 2));
+  throw new CookieError();
   const res = await fetch(requestData.url, {
     headers: requestData.headers,
     method: "POST",
