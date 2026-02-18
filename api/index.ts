@@ -4,6 +4,8 @@ import { fileURLToPath } from "url";
 import scrapeLoginPage from "./loginPage";
 import ScrapeError from "./scrapeError";
 import signIn from "./signIn";
+import searchByProfessor from "./searchByProfessor";
+import test from "./test";
 
 const port = 3000;
 const users = ["Adam", "Betty", "Cancer"];
@@ -21,18 +23,48 @@ app.get("/api/hello", (req, res) => {
   res.json({ message: "hello!" });
 });
 
-app.get("/api/test", async (req, res) => {
+app.get("/api/test", (req, res) => {
+  const ck = test();
+  console.log(ck);
+  res.json({ ck });
+});
+
+app.post("/api/login", async (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  if (typeof username !== "string" || typeof password !== "string") {
+    res.json({
+      result: "Error: expected username and password in request."
+    });
+    return;
+  }
   try {
-    scrapeLoginPage().then(result =>
-      signIn(
-        result.cookie,
-        
-      )
-    )
-    res.send(await scrapeLoginPage());
+    const scrapeLoginPageResult = await scrapeLoginPage();
+    const signInResult = await signIn(
+      scrapeLoginPageResult.cookie,
+      username,
+      password,
+      scrapeLoginPageResult.pInstance,
+      scrapeLoginPageResult.pPageSubmissionId,
+      scrapeLoginPageResult.pPageItemsProtected
+    );
+    const courses = await searchByProfessor(
+      signInResult.ck,
+      signInResult.cookie,
+      "washburn, alexander",
+      scrapeLoginPageResult.pInstance,
+      signInResult.pPageSubmissionId,
+      signInResult.pPageItemsProtected
+    );
+    res.json({
+      result: "success",
+      courses
+    });
   } catch (e) {
     if (e instanceof ScrapeError) {
-      res.send(`Error while web scraping: ${e.message()}`);
+      res.json({
+        result: `Error while web scraping: ${e.message()}`
+      });
     } else {
       throw e;
     }

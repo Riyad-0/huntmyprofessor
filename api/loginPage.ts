@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import ScrapeError from "./scrapeError";
-import cookieName from "./cookieName";
+import parseCookie from "./parseCookie";
 
 const requestData = {
   url: "https://www.hunter.cuny.edu/myprof",
@@ -69,7 +69,7 @@ async function parseResponse(rawResponseData: RawResponseData): Promise<Response
   if (typeof pInstance !== "string" || typeof pPageSubmissionId !== "string" || typeof pPageItemsProtected !== "string") {
     throw new HTMLError();
   }
-  const cookie = rawResponseData.cookies.find(cookie => cookie.startsWith(cookieName + "="));
+  const cookie = parseCookie(rawResponseData.cookies);
   if (cookie === undefined) {
     throw new CookieError();
   }

@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import ScrapeError from "./scrapeError";
-import cookieName from "./cookieName";
+import parseCookie from "./parseCookie";
 
 interface Input {
   cookie: string,
@@ -31,8 +31,24 @@ const logInCookieErrorMessage = `expected cookie was not set after logging in.
 This web scraper may need to be updated.`;
 
 class HTMLError extends ScrapeError {
+  missing: string[];
+  responseText: string;
+
+  constructor(
+    missing: string[],
+    responseText: string
+  ) {
+    super();
+    this.missing = missing;
+    this.responseText = responseText;
+  }
+
   message(): string {
-    return searchPageHTMLErrorMessage;
+    const missingMessage = `missing elements: ${this.missing}`;
+    const responseTextMessage = `response text:\n${this.responseText}`;
+    return searchPageHTMLErrorMessage + "\n" +
+      missingMessage + "\n" +
+      responseTextMessage;
   }
 }
 
@@ -103,9 +119,19 @@ async function parseResponse(rawResponseData: RawResponseData): Promise<Response
   const pPageSubmissionId = $("#pPageSubmissionId").val();
   const pPageItemsProtected = $("#pPageItemsProtected").val();
   if (typeof ck !== "string" || typeof pPageSubmissionId !== "string" || typeof pPageItemsProtected !== "string") {
-    throw new HTMLError();
+    const missing = [];
+    if (typeof ck !== "string") {
+      missing.push("ck");
+    }
+    if (typeof pPageSubmissionId !== "string") {
+      missing.push("pPageSubmissionId");
+    }
+    if (typeof pPageItemsProtected !== "string") {
+      missing.push("pPageItemsProtected");
+    }
+    throw new HTMLError(missing, rawResponseData.text);
   }
-  const cookie = rawResponseData.cookies.find(cookie => cookie.startsWith(cookieName + "="));
+  const cookie = parseCookie(rawResponseData.cookies);
   if (cookie === undefined) {
     throw new CookieError();
   }
