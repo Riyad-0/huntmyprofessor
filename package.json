@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "api": "tsx watch api/index.ts",
+    "api-old": "tsx watch api/index.ts",
+    "api": "fastapi dev api/main.py",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
