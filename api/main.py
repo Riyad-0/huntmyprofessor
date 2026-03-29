@@ -28,5 +28,6 @@ def login(login: Login):
   output = sign_in(s, output, login.username, login.password)
   output = professor_search(s, output, search_text="washburn, alexander")
   print(output.courses)
+  
 
   return "Woah"
