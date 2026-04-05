@@ -1,9 +1,11 @@
+from typing import Any
+
 from fastapi import FastAPI
 from pydantic import BaseModel
+import requests
 from scrape.open_login_page import open_login_page
 from scrape.sign_in import sign_in
 from scrape.professor_search import professor_search
-import requests
 
 app = FastAPI()
 
@@ -20,14 +22,20 @@ class Login(BaseModel):
   username: str
   password: str
 
+class LoginResult(BaseModel):
+  result: str
+  courses: list[Any]
+
+
 @app.post("/api/login")
 def login(login: Login):
-  print(login.username, login.password)
   s = requests.Session()
   output = open_login_page(s)
   output = sign_in(s, output, login.username, login.password)
   output = professor_search(s, output, search_text="washburn, alexander")
   print(output.courses)
   
-
-  return "Woah"
+  return LoginResult(
+    result="success",
+    courses=output.courses,
+  )

@@ -30,6 +30,7 @@ function Login() {
     const body = await res.json();
     if (body.result === "success") {
       setCourses(body.courses);
+      console.log(body.courses);
     } else {
       console.log(body.result);
     }
