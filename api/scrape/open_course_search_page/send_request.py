@@ -2,10 +2,11 @@
 #   text: string,
 #   cookies: string[]
 # }
-
 from scrape.log import log_get
 
-from . import request
+from .input import Input
+
+from .build_request import build_request
 import requests
 
 class Response:
@@ -13,9 +14,9 @@ class Response:
     self.text = text
     self.cookies = cookies
 
-def send_request(s: requests.Session):
-  print(f"open_login_page: GET {request.url}")
-
+def send_request(s: requests.Session, input: Input):
+  request = build_request(input)
+  print("URL HERE: ", request.url)
   res = s.get(url=request.url, headers=request.headers)
   log_get(res, s.cookies)
   return Response(text=res.text, cookies=s.cookies)

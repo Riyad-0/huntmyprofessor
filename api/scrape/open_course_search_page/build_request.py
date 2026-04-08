@@ -10,7 +10,8 @@ def parse_headers():
     headers = json.load(file)
     return headers
 
-partial_url = "https://orapp.hunter.cuny.edu/ords/wwv_flow.accept?p_context=116:6:"
+partial_url = "https://orapp.hunter.cuny.edu/ords/f?p=116:6:"
+url_suffix = ":::::"
 partial_headers = parse_headers()
 
 class Request:
@@ -18,31 +19,16 @@ class Request:
     self,
     url: str,
     headers: dict[str, str],
-    form_data: dict[str, str]
   ):
     self.url = url
     self.headers = headers
-    self.form_data = form_data
 
 def build_request(input: Input):
   cookie = input.cookie
   p_instance = input.p_instance
-  p_page_submission_id = input.p_page_submission_id
-  protected = input.p_page_items_protected
-  ck = input.ck
   return Request(
-    url=partial_url + p_instance,
-    # url="http://localhost:3000/api/req",
+    url=partial_url + p_instance + url_suffix,
     headers=partial_headers | {
       "Cookie": cookie
-    },
-    form_data={
-      'p_json': f'{{"salt":"{p_page_submission_id}","pageItems":{{"itemsToSubmit":[{{"n":"P3_LAST_NAME","v":"{search_text}"}},{{"n":"P3_LINK","v":"", "ck":"{ck}"}}],"protected":"{protected}","rowVersion":"","formRegionChecksums":[]}}}}',
-      'p_flow_id': '116',
-      'p_flow_step_id': '6',
-      'p_instance': p_instance,
-      'p_page_submission_id': p_page_submission_id,
-      'p_request': 'P3_GO',
-      'p_reload_on_submit': 'A'
     }
   )

@@ -3,9 +3,12 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
+from scrape.log import clear_log
+from scrape.scrape_error import ScrapeError
 from scrape.open_login_page import open_login_page
 from scrape.sign_in import sign_in
 from scrape.professor_search import professor_search
+from scrape.open_course_search_page import open_course_search_page
 
 app = FastAPI()
 
@@ -26,6 +29,11 @@ class LoginResult(BaseModel):
   result: str
   courses: list[Any]
 
+class CourseSearchResult(BaseModel):
+  result: str
+
+class CourseSearchError(CourseSearchResult):
+  message: str
 
 @app.post("/api/login")
 def login(login: Login):
@@ -39,3 +47,21 @@ def login(login: Login):
     result="success",
     courses=output.courses,
   )
+
+@app.post("/api/courses")
+def courses(login: Login):
+  print("HELLO!")
+  clear_log()
+  s = requests.Session()
+  try:
+    output = open_login_page(s)
+    output = sign_in(s, output, login.username, login.password)
+    output = open_course_search_page(s, output)
+    print(output.dept_options)
+    return CourseSearchResult(result="success")
+  except Exception as e:
+    if isinstance(e, ScrapeError):
+      print(e.message)
+      return CourseSearchError(result="error", message=e.message())
+    else:
+      raise e

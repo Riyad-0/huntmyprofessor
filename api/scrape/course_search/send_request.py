@@ -18,6 +18,5 @@ def send_request(s: requests.Session, input: Input):
   res = s.post(
     url=request.url,
     headers=request.headers,
-    data=request.form_data,
   )
   return Response(text=res.text, cookies=s.cookies)

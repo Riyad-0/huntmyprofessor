@@ -2,6 +2,7 @@
 #   text: string,
 #   cookies: string[]
 # }
+from scrape.log import log_post
 
 from .input import Input
 
@@ -20,4 +21,5 @@ def send_request(s: requests.Session, input: Input):
     headers=request.headers,
     data=request.form_data,
   )
+  log_post(res, s.cookies)
   return Response(text=res.text, cookies=s.cookies)
