@@ -9,6 +9,8 @@ from scrape.open_login_page import open_login_page
 from scrape.sign_in import sign_in
 from scrape.professor_search import professor_search
 from scrape.open_course_search_page import open_course_search_page
+from scrape.select_dept import select_dept
+from scrape.select_subject import select_subject
 
 app = FastAPI()
 
@@ -56,8 +58,10 @@ def courses(login: Login):
   try:
     output = open_login_page(s)
     output = sign_in(s, output, login.username, login.password)
-    output = open_course_search_page(s, output)
-    print(output.dept_options)
+    open_course_search_page_output = open_course_search_page(s, output)
+    output = select_dept(s, open_course_search_page_output)
+    output = select_subject(s, open_course_search_page_output)
+    print(output.course_number_options)
     return CourseSearchResult(result="success")
   except Exception as e:
     if isinstance(e, ScrapeError):

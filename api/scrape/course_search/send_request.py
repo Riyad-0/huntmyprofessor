@@ -3,6 +3,8 @@
 #   cookies: string[]
 # }
 
+from scrape.log import log_post
+
 from .input import Input
 
 from .build_request import build_request
@@ -18,5 +20,12 @@ def send_request(s: requests.Session, input: Input):
   res = s.post(
     url=request.url,
     headers=request.headers,
+  )
+  log_post(
+    url=request.url,
+    headers=request.headers,
+    form_data=request.form_data,
+    res=res,
+    cookies=s.cookies
   )
   return Response(text=res.text, cookies=s.cookies)

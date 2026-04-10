@@ -1,19 +1,21 @@
 from dataclasses import dataclass
 
-from .. import sign_in
+from .. import open_course_search_page
 
 @dataclass
 class Input():
+  ajax_identifier: str
   cookie: str
   p_instance: str
   p_page_submission_id: str
   p_page_items_protected: str
 
   @staticmethod
-  def from_sign_in(
-    output: sign_in.Output,
+  def from_open_course_search_page(
+    output: open_course_search_page.Output,
   ) -> Input:
     return Input(
+      ajax_identifier=output.dept_ajax_identifier,
       cookie=output.cookie,
       p_instance=output.p_instance,
       p_page_submission_id=output.p_page_submission_id,

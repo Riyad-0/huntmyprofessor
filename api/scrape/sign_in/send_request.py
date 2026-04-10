@@ -21,5 +21,11 @@ def send_request(s: requests.Session, input: Input):
     headers=request.headers,
     data=request.form_data,
   )
-  log_post(res, s.cookies)
+  log_post(
+    url=request.url,
+    headers=request.headers,
+    form_data=request.form_data,
+    res=res,
+    cookies=s.cookies
+  )
   return Response(text=res.text, cookies=s.cookies)

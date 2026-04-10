@@ -17,5 +17,10 @@ def send_request(s: requests.Session):
   print(f"open_login_page: GET {request.url}")
 
   res = s.get(url=request.url, headers=request.headers)
-  log_get(res, s.cookies)
+  log_get(
+    url=request.url,
+    headers=request.headers,
+    res=res,
+    cookies=s.cookies,
+  )
   return Response(text=res.text, cookies=s.cookies)

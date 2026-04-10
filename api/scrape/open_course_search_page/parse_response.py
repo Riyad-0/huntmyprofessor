@@ -1,3 +1,5 @@
+import json
+
 from bs4 import BeautifulSoup
 from ..parse_cookie import parse_cookie
 from .send_request import Response
@@ -16,6 +18,8 @@ class Output:
   p_instance: str
   p_page_items_protected: str
   p_page_submission_id: str
+  dept_ajax_identifier: str
+  subject_ajax_identifier: str
   dept_options: list[SelectElementOption]
 
 course_search_page_cookie_error_message = """expected cookie was not set after
@@ -26,6 +30,10 @@ course_search_page_html_error_message = """expected HTML elements were not found
 course search page. The course search page may have changed since this web
 scraper was last updated."""
 
+course_search_page_ajax_identifier_error_message = """ajaxIdentifier was not 
+found in the course search page. The course search page may have changed since 
+this web scraper was last updated."""
+
 class CookieError(ScrapeError):
   @override
   def message(self) -> str:
@@ -33,14 +41,64 @@ class CookieError(ScrapeError):
 
 @dataclass
 class HTMLError(ScrapeError):
-  html: str
+  res_text: str
   @override
   def message(self) -> str:
     return course_search_page_html_error_message + \
-      "\nResponse text:\n" + self.html
+      "\nResponse text:\n" + self.res_text
+  
+@dataclass
+class AjaxIdentifierError(ScrapeError):
+  res_text: str
+  @override
+  def message(self) -> str:
+    return course_search_page_ajax_identifier_error_message + \
+      "\nResponse text:\n" + self.res_text
+
+def get_ajax_identifier(res_text: str, pattern_id: str):
+  pattern = f'(function(){{apex.widget.selectList("#{pattern_id}"'
+  i = res_text.find(pattern)
+  if i == -1:
+    raise AjaxIdentifierError(res_text=res_text)
+  i += len(pattern)
+  pattern = '"ajaxIdentifier":"'
+  j = res_text.find(pattern, i)
+  if j == -1:
+    raise AjaxIdentifierError(res_text=res_text)
+  start = j + len(pattern)
+  end = res_text.find('"', start)
+  if end == -1:
+    raise AjaxIdentifierError(res_text=res_text)
+  raw_ajax_identifier = res_text[start:end]
+
+  # This is necessary to replace escape sequences (e.g. \\u002F) with the
+  # proper character (e.g. /).
+  ajax_identifier = json.loads(f'"{raw_ajax_identifier}"')
+  return ajax_identifier
 
 def parse_response(response: Response) -> Output:
   soup = BeautifulSoup(response.text, 'html.parser')
+  pattern = '(function(){apex.widget.selectList("#P6_SUBJECT"'
+  i = response.text.find(pattern)
+  if i == -1:
+    raise AjaxIdentifierError(res_text=response.text)
+  i += len(pattern)
+  pattern = '"ajaxIdentifier":"'
+  j = response.text.find(pattern, i)
+  if j == -1:
+    raise AjaxIdentifierError(res_text=response.text)
+  start = j + len(pattern)
+  end = response.text.find('"', start)
+  if end == -1:
+    raise AjaxIdentifierError(res_text=response.text)
+  raw_ajax_identifier = response.text[start:end]
+
+  # This is necessary to replace escape sequences (e.g. \\u002F) with the
+  # proper character (e.g. /).
+  dept_ajax_identifier = json.loads(f'"{raw_ajax_identifier}"')
+
+  subject_ajax_identifier = get_ajax_identifier(response.text, "P6_CATALOG_NUM")
+  
   dept_select_element = soup.find(id='P6_DEPT')
   p_instance_element = soup.find(id='pInstance')
   p_page_submission_id_element = soup.find(id='pPageSubmissionId')
@@ -72,6 +130,8 @@ def parse_response(response: Response) -> Output:
   if cookie is None:
     raise CookieError()
   return Output(
+    dept_ajax_identifier=dept_ajax_identifier,
+    subject_ajax_identifier=subject_ajax_identifier,
     cookie=cookie,
     p_instance=p_instance,
     p_page_submission_id=p_page_submission_id,

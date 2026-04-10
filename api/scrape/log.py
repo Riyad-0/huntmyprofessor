@@ -2,9 +2,10 @@ import json
 import os
 from typing import Any
 from pathlib import Path
-import requests;
+import requests
 from requests.sessions import RequestsCookieJar
 from requests.structures import CaseInsensitiveDict
+from urllib.parse import parse_qs
 
 dir_name = os.path.dirname(__file__)
 log_file_path = os.path.join(dir_name, "log.json")
@@ -22,9 +23,16 @@ def read_log() -> Any:
   except FileNotFoundError:
     return []
 
-def log_get(res: requests.Response, cookies: RequestsCookieJar):
+def log_get(
+  url: str,
+  headers: dict[str, str],
+  res: requests.Response,
+  cookies: RequestsCookieJar,
+):
   data = read_log()
   data.append({
+    "my-url": url,
+    "my-headers": headers,
     "url": res.request.url,
     "headers": res.request.headers,
     "cookies": cookies,
@@ -33,14 +41,58 @@ def log_get(res: requests.Response, cookies: RequestsCookieJar):
   with open(log_file_path, "w") as log_file:
     json.dump(data, log_file, indent=2, default=serialize_default)
 
-def log_post(res: requests.Response, cookies: RequestsCookieJar):
+def log_post(
+  url: str,
+  headers: dict[str, str],
+  form_data: dict[str, str],
+  res: requests.Response,
+  cookies: RequestsCookieJar
+):
+  if isinstance(res.request.body, str):    
+    parsed_body = parse_qs(res.request.body)
+    parsed_body = {k: v[0] for k, v in parsed_body.items()}
+  else:
+    parsed_body = res.request.body
   data = read_log()
   data.append({
+    "my-url": url,
+    "my-headers": headers,
+    "my-form-data": form_data,
     "url": res.request.url,
     "headers": res.request.headers,
-    "body": res.request.body,
+    "raw-body": res.request.body,
+    "body": parsed_body,
     "cookies": cookies,
     "res": [res.text],
+  })
+  with open(log_file_path, "w") as log_file:
+    json.dump(data, log_file, indent=2, default=serialize_default)
+
+def log_post_json(
+  url: str,
+  headers: dict[str, str],
+  form_data: dict[str, str],
+  res: requests.Response,
+  cookies: RequestsCookieJar,
+  res_json: Any,
+):
+  if isinstance(res.request.body, str):    
+    parsed_body = parse_qs(res.request.body)
+    parsed_body = {k: v[0] for k, v in parsed_body.items()}
+  else:
+    parsed_body = res.request.body
+  data = read_log()
+  data.append({
+    "my-url": url,
+    "my-headers": headers,
+    "my-form-data": form_data,
+    "url": res.request.url,
+    "headers": res.request.headers,
+    "raw-body": res.request.body,
+    "body": parsed_body,
+    "cookies": cookies,
+    "res": [res.text],
+    "res_json": res_json,
   })
   with open(log_file_path, "w") as log_file:
     json.dump(data, log_file, indent=2, default=serialize_default)

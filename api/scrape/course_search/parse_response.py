@@ -12,5 +12,8 @@ class Output():
 
 def parse_response(response: Response, input: Input) -> Output:
   soup = BeautifulSoup(response.text, 'html.parser')
+  course_elements = soup.find_all(name="td", attrs={'headers': 'COURSE'})
+  for course_element in course_elements:
+    course_element.find_next_siblings(name="td")
   courses = [course_element.text for course_element in soup.find_all(attrs={'headers': 'COURSE'})]
   return Output(courses=courses)
