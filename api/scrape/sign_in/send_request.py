@@ -16,6 +16,7 @@ class Response:
 
 def send_request(s: requests.Session, input: Input):
   request = build_request(input)
+  print("Signing in...")
   res = s.post(
     url=request.url,
     headers=request.headers,

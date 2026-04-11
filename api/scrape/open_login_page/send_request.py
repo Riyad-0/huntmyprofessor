@@ -14,8 +14,7 @@ class Response:
     self.cookies = cookies
 
 def send_request(s: requests.Session):
-  print(f"open_login_page: GET {request.url}")
-
+  print("Opening login page...")
   res = s.get(url=request.url, headers=request.headers)
   log_get(
     url=request.url,

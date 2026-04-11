@@ -2,8 +2,7 @@
 #   text: string,
 #   cookies: string[]
 # }
-
-from scrape.log import log_post
+from scrape.log import log_get
 
 from .input import Input
 
@@ -17,17 +16,12 @@ class Response:
 
 def send_request(s: requests.Session, input: Input):
   request = build_request(input)
-  print("Searching by course...")
-  res = s.post(
+  print("Opening evaluation report...")
+  res = s.get(url=request.url, headers=request.headers)
+  log_get(
     url=request.url,
     headers=request.headers,
-    data=request.form_data,
-  )
-  log_post(
-    url=request.url,
-    headers=request.headers,
-    form_data=request.form_data,
     res=res,
-    cookies=s.cookies
+    cookies=s.cookies,
   )
   return Response(text=res.text, cookies=s.cookies)

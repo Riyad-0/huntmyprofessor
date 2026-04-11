@@ -16,7 +16,7 @@ class Response:
 
 def send_request(s: requests.Session, input: Input):
   request = build_request(input)
-  print("URL HERE: ", request.url)
+  print("Opening course search page...")
   res = s.get(url=request.url, headers=request.headers)
   log_get(
     url=request.url,
