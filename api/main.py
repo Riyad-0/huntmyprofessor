@@ -68,9 +68,12 @@ def courses(login: Login):
     search_output = course_search(
       s,
       open_course_search_page_output,
-      department="CSCI-HTR",
-      subject="CSCI",
-      course_num="33500",
+      department="ENGL-HTR",
+      subject="ENGL",
+      course_num="12000",
+      # department="CSCI-HTR",
+      # subject="CSCI",
+      # course_num="33500",
     )
     course_sections = search_output.course_sections
     cookie = search_output.cookie
