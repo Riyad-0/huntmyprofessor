@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+# from scrape import course_search
 from scrape.course_search.parse_response import PaginateCodes
 
 # from .. import course_search

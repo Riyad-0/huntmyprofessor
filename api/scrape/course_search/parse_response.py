@@ -7,7 +7,6 @@ from bs4 import BeautifulSoup
 from scrape.parse_cookie import parse_cookie
 from scrape.scrape_error import ScrapeError
 
-from .input import Input
 from .send_request import Response
 
 @dataclass
@@ -15,16 +14,17 @@ class Output():
   p_instance: str
   p_page_submission_id: str
   cookie: str
-  eval_reports: list[EvalReport]
+  course_sections: list[CourseSection]
   paginate_codes: PaginateCodes | None
 
 @dataclass
-class EvalReport:
+class CourseSection:
   course: str
   semester: str | None
   professor: str | None
   # Relative path; should be prefixed by 'https://orapp.hunter.cuny.edu/ords/'.
   url: str | None
+  
 
 @dataclass
 class PaginateCodes:
@@ -42,8 +42,42 @@ class CookieError(ScrapeError):
   @override
   def message(self):
     return "Cookie error"
+  
+def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
+  course_elements = soup.find_all(name="td", attrs={'headers': 'COURSE'})
+  course_sections: list[CourseSection] = []
+  for course_element in course_elements:
+    semester_el = course_element.find_next_sibling(name="td", attrs={'headers': 'SEMETER'})
+    professor_el = course_element.find_next_sibling(name="td", attrs={'headers': 'INST_NAME'})
+    eval_el = course_element.find_next_sibling(name="td", attrs={'headers': 'EVAL_TYPE'})
+    course = course_element.text
+    semester = None
+    professor = None
+    url = None
+    if semester_el is not None:
+      semester = semester_el.text
+    if professor_el is not None:
+      professor = professor_el.text
+    if eval_el is not None:
+      link_el = eval_el.find(name="a")
+      if link_el is not None:
+        href = link_el.get('href')
+        if isinstance(href, str):
+          url = href    
 
-def parse_paginate_codes(res_text: str) -> PaginateCodes | None:
+    course_sections.append(CourseSection(
+      course=course,
+      semester=semester,
+      professor=professor,
+      url=url,
+    ))
+  return course_sections
+
+def parse_paginate_codes(soup: BeautifulSoup, res_text: str) -> PaginateCodes | None:
+  next_page_button = soup.find(class_="t-Report-paginationLink--next")
+  if next_page_button is None:
+    return None
+
   pattern = "widget.report.paginate('"
   i = res_text.find(pattern)
   if i == -1:
@@ -70,7 +104,7 @@ def parse_paginate_codes(res_text: str) -> PaginateCodes | None:
 
   return PaginateCodes(x01=x01, p_request=p_request)
 
-def parse_response(response: Response, input: Input) -> Output:
+def parse_response(response: Response) -> Output:
   soup = BeautifulSoup(response.text, 'html.parser')
   p_instance_element = soup.find(id='pInstance')
   p_page_submission_id_element = soup.find(id='pPageSubmissionId')
@@ -91,39 +125,45 @@ def parse_response(response: Response, input: Input) -> Output:
   if cookie is None:
     raise CookieError()
   
-  course_elements = soup.find_all(name="td", attrs={'headers': 'COURSE'})
-  eval_reports: list[EvalReport] = []
-  for course_element in course_elements:
-    semester_el = course_element.find_next_sibling(name="td", attrs={'headers': 'SEMETER'})
-    professor_el = course_element.find_next_sibling(name="td", attrs={'headers': 'INST_NAME'})
-    eval_el = course_element.find_next_sibling(name="td", attrs={'headers': 'EVAL_TYPE'})
-    course = course_element.text
-    semester = None
-    professor = None
-    url = None
-    if semester_el is not None:
-      semester = semester_el.text
-    if professor_el is not None:
-      professor = professor_el.text
-    if eval_el is not None:
-      link_el = eval_el.find(name="a")
-      if link_el is not None:
-        href = link_el.get('href')
-        if isinstance(href, str):
-          url = href
-    eval_reports.append(EvalReport(
-      course=course,
-      semester=semester,
-      professor=professor,
-      url=url,
-    ))
-  paginate_codes = parse_paginate_codes(response.text)
+  # course_elements = soup.find_all(name="td", attrs={'headers': 'COURSE'})
+  # course_sections: list[CourseSection] = []
+  # for course_element in course_elements:
+  #   semester_el = course_element.find_next_sibling(name="td", attrs={'headers': 'SEMETER'})
+  #   professor_el = course_element.find_next_sibling(name="td", attrs={'headers': 'INST_NAME'})
+  #   eval_el = course_element.find_next_sibling(name="td", attrs={'headers': 'EVAL_TYPE'})
+  #   course = course_element.text
+  #   semester = None
+  #   professor = None
+  #   url = None
+  #   if semester_el is not None:
+  #     semester = semester_el.text
+  #   if professor_el is not None:
+  #     professor = professor_el.text
+  #   if eval_el is not None:
+  #     link_el = eval_el.find(name="a")
+  #     if link_el is not None:
+  #       href = link_el.get('href')
+  #       if isinstance(href, str):
+  #         url = href    
+
+  #   course_sections.append(CourseSection(
+  #     course=course,
+  #     semester=semester,
+  #     professor=professor,
+  #     url=url,
+  #   ))
+  # next_page_button = soup.find(class_="t-Report-paginationLink--next")
+  # if next_page_button is None:
+  #   paginate_codes = None
+  # else:
+  course_sections = parse_course_sections(soup)
+  paginate_codes = parse_paginate_codes(soup=soup, res_text=response.text)
       
   # courses = [course_element.text for course_element in soup.find_all(attrs={'headers': 'COURSE'})]
   return Output(
     p_instance=p_instance,
     p_page_submission_id=p_page_submission_id,
     cookie=cookie,
-    eval_reports=eval_reports,
+    course_sections=course_sections,
     paginate_codes=paginate_codes,
   )

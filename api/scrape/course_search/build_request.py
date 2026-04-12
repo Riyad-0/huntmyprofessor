@@ -30,9 +30,9 @@ def build_request(input: Input):
   p_page_submission_id = input.p_page_submission_id
   salt = p_page_submission_id
   protected = input.p_page_items_protected
-  dept = "CSCI-HTR"
-  subject = "CSCI"
-  course_num = "33500"
+  dept = input.department
+  subject = input.subject
+  course_num = input.course_num
   return Request(
     url=partial_url + p_instance,
     # url="http://localhost:3000/api/req",
