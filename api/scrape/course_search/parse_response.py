@@ -20,10 +20,10 @@ class Output():
 @dataclass
 class CourseSection:
   course: str
-  semester: str | None
-  professor: str | None
+  semester: str
+  professor: str
   # Relative path; should be prefixed by 'https://orapp.hunter.cuny.edu/ords/'.
-  url: str | None
+  url: str
   
 
 @dataclass
@@ -51,19 +51,21 @@ def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
     professor_el = course_element.find_next_sibling(name="td", attrs={'headers': 'INST_NAME'})
     eval_el = course_element.find_next_sibling(name="td", attrs={'headers': 'EVAL_TYPE'})
     course = course_element.text
-    semester = None
-    professor = None
-    url = None
-    if semester_el is not None:
-      semester = semester_el.text
-    if professor_el is not None:
-      professor = professor_el.text
-    if eval_el is not None:
-      link_el = eval_el.find(name="a")
-      if link_el is not None:
-        href = link_el.get('href')
-        if isinstance(href, str):
-          url = href    
+    if semester_el is None:
+      continue
+    semester = semester_el.text
+    if professor_el is None:
+      continue
+    professor = professor_el.text
+    if eval_el is None:
+      continue
+    link_el = eval_el.find(name="a")
+    if link_el is None:
+      continue
+    href = link_el.get('href')
+    if not isinstance(href, str):
+      continue
+    url = href
 
     course_sections.append(CourseSection(
       course=course,

@@ -13,9 +13,9 @@ class Output:
 @dataclass
 class EvalReport:
   course: str
-  semester: str | None
-  professor: str | None
-  page: EvalReportPage | None
+  semester: str
+  professor: str
+  page: EvalReportPage
 
 @dataclass
 class EvalReportPage:
@@ -30,26 +30,18 @@ def open_eval_reports(
 ) -> Output:
   eval_reports: list[EvalReport] = []
   for course_section in course_sections:
-    if course_section.url is not None:
-      output = open_eval_report(s, cookie=cookie, url=course_section.url)
-      cookie = output.cookie
-      eval_reports.append(EvalReport(
-        course=course_section.course,
-        semester=course_section.semester,
-        professor=course_section.professor,
-        page=EvalReportPage(
-          url=course_section.url,
-          score_sections=output.score_sections,
-          expected_grades=output.expected_grades
-        ),
-      ))
-    else:
-      eval_reports.append(EvalReport(
-        course=course_section.course,
-        semester=course_section.semester,
-        professor=course_section.professor,
-        page=None,
-      ))
+    output = open_eval_report(s, cookie=cookie, url=course_section.url)
+    cookie = output.cookie
+    eval_reports.append(EvalReport(
+      course=course_section.course,
+      semester=course_section.semester,
+      professor=course_section.professor,
+      page=EvalReportPage(
+        url=course_section.url,
+        score_sections=output.score_sections,
+        expected_grades=output.expected_grades
+      ),
+    ))
   return Output(
     cookie=cookie,
     eval_reports=eval_reports,

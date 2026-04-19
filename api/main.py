@@ -65,6 +65,59 @@ def courses(login: Login):
     open_course_search_page_output = open_course_search_page(s, output)
     output = select_dept(s, open_course_search_page_output)
     output = select_subject(s, open_course_search_page_output)
+    course_number_options = output.course_number_options
+    for course_num in course_number_options:
+      search_output = course_search(
+        s,
+        open_course_search_page_output,
+        department="CSCI-HTR",
+        subject="CSCI",
+        course_num=course_num,
+      )
+      course_sections = search_output.course_sections
+      cookie = search_output.cookie
+      output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+      cookie = output.cookie
+      eval_reports = output.eval_reports
+      paginate_codes = search_output.paginate_codes
+      if paginate_codes is not None:
+        output = open_next_page(
+          s,
+          cookie=cookie,
+          p_instance=search_output.p_instance,
+          p_page_submission_id=search_output.p_page_submission_id,
+          paginate_codes=paginate_codes
+        )
+        if output.cookie is not None:
+          cookie = output.cookie
+        course_sections = output.course_sections
+        output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+        eval_reports = output.eval_reports
+        for eval_report in output.eval_reports:
+          eval_reports.append(eval_report)
+        
+      with open("out.json", "w") as f:
+        json.dump(eval_reports, f, indent=2, default=json_default)
+      return CourseSearchResult(result="success")
+  except Exception as e:
+    if isinstance(e, ScrapeError):
+      print(e.message())
+      return CourseSearchError(result="error", message=e.message())
+    else:
+      raise e
+
+@app.post("/api/coursesold")
+def coursesold(login: Login):
+  print("HELLO!")
+  clear_log()
+  s = requests.Session()
+  try:
+    output = open_login_page(s)
+    output = sign_in(s, output, login.username, login.password)
+    open_course_search_page_output = open_course_search_page(s, output)
+    output = select_dept(s, open_course_search_page_output)
+    output = select_subject(s, open_course_search_page_output)
+    course_number_options = output.course_number_options
     search_output = course_search(
       s,
       open_course_search_page_output,
