@@ -3,7 +3,9 @@ import json
 from typing import override
 
 from bs4 import BeautifulSoup
+from requests.sessions import RequestsCookieJar
 
+from scrape.eval_url import EvalUrl
 from scrape.parse_cookie import parse_cookie
 from scrape.scrape_error import ScrapeError
 
@@ -22,9 +24,7 @@ class CourseSection:
   course: str
   semester: str
   professor: str
-  # Relative path; should be prefixed by 'https://orapp.hunter.cuny.edu/ords/'.
-  url: str
-  
+  url: EvalUrl
 
 @dataclass
 class PaginateCodes:
@@ -71,7 +71,7 @@ def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
       course=course,
       semester=semester,
       professor=professor,
-      url=url,
+      url=EvalUrl(rel_path=url),
     ))
   return course_sections
 
@@ -106,8 +106,8 @@ def parse_paginate_codes(soup: BeautifulSoup, res_text: str) -> PaginateCodes | 
 
   return PaginateCodes(x01=x01, p_request=p_request)
 
-def parse_response(response: Response) -> Output:
-  soup = BeautifulSoup(response.text, 'html.parser')
+def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+  soup = BeautifulSoup(res_text, 'html.parser')
   p_instance_element = soup.find(id='pInstance')
   p_page_submission_id_element = soup.find(id='pPageSubmissionId')
   if (
@@ -123,7 +123,7 @@ def parse_response(response: Response) -> Output:
   ):
     raise HTMLError()
 
-  cookie = parse_cookie(response.cookies)
+  cookie = parse_cookie(cookies)
   if cookie is None:
     raise CookieError()
   
@@ -159,7 +159,7 @@ def parse_response(response: Response) -> Output:
   #   paginate_codes = None
   # else:
   course_sections = parse_course_sections(soup)
-  paginate_codes = parse_paginate_codes(soup=soup, res_text=response.text)
+  paginate_codes = parse_paginate_codes(soup=soup, res_text=res_text)
       
   # courses = [course_element.text for course_element in soup.find_all(attrs={'headers': 'COURSE'})]
   return Output(

@@ -1,9 +1,10 @@
+from scrape.log import log_post, log
 from scrape.course_search.parse_response import PaginateCodes
 
 from .input import Input
 
-from .parse_response import parse_response, Output
-from .send_request import send_request
+from .parse_response import Output, parse_response
+from .build_request import build_request
 import requests
 
 def fetch_next_rows(
@@ -19,5 +20,21 @@ def fetch_next_rows(
     p_page_submission_id=p_page_submission_id,
     paginate_codes=paginate_codes,
   )
-  response = send_request(s, input)
-  return parse_response(response)
+
+  request = build_request(input)
+  log.info("Fetching next rows")
+  res = s.post(
+    url=request.url,
+    headers=request.headers,
+    data=request.form_data,
+  )
+  log_post(
+    url=request.url,
+    headers=request.headers,
+    form_data=request.form_data,
+    res=res,
+    cookies=s.cookies
+  )
+
+  # response = send_request(s, input)
+  return parse_response(res_text=res.text, cookies=s.cookies)

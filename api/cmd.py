@@ -46,16 +46,17 @@ def main():
   )
   choice = input("Choice: ")
 
-  state: State3 = Start3()
-  s = requests.Session()
+  # state: State3 = Start3()
+  # s = requests.Session()
 
   
-  match choice:
-    case "1":
-      username = input("Username: ")
-      password = input("Password: ")
+  # match choice:
+  #   case "1":
+  #     username = input("Username: ")
+  #     password = input("Password: ")
 
-def verify_signed_in(state: State3) -> State3:
-  if isinstance(state, Start3):
-    output = open_login_page.open_login_page()
+# def verify_signed_in(state: State3) -> State3:
+#   if isinstance(state, Start3):
+#     output = open_login_page.open_login_page()
     
+main()

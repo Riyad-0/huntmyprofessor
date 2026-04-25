@@ -6,6 +6,17 @@ import requests
 from requests.sessions import RequestsCookieJar
 from requests.structures import CaseInsensitiveDict
 from urllib.parse import parse_qs
+import logging
+from logging import FileHandler, Formatter, StreamHandler
+log = logging.getLogger("huntmyprofessor")
+formatter = Formatter('%(asctime)s %(levelname)s %(message)s')
+file_handler = FileHandler(filename="a.log", encoding='utf-8', mode='w')
+file_handler.setFormatter(formatter)
+console_handler = StreamHandler()
+console_handler.setFormatter(formatter)
+log.setLevel(logging.DEBUG)
+log.addHandler(file_handler)
+log.addHandler(console_handler)
 
 dir_name = os.path.dirname(__file__)
 log_file_path = os.path.join(dir_name, "log.json")
@@ -102,9 +113,9 @@ def serialize_default(x: Any):
     return dict(x)
   raise TypeError(f"Object of type {type(x).__name__} is not JSON serializable")
 
-def log(s: str):
-  with open(log_file_path, "w") as log_file:
-    log_file.write(s)
+# def log(s: str):
+#   with open(log_file_path, "w") as log_file:
+#     log_file.write(s)
 
 def log_to(file_name: str, s: str):
   file_path = rel_path(file_name)

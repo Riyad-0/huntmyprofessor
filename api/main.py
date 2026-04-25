@@ -4,7 +4,8 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
-from scrape.open_eval_reports import open_eval_reports
+from scrape.data import fetch_data
+from scrape.open_eval_reports import open_eval_reports, eval_reports_iter
 from scrape.log import clear_log
 from scrape.scrape_error import ScrapeError
 from scrape.open_login_page import open_login_page
@@ -14,7 +15,9 @@ from scrape.open_course_search_page import open_course_search_page
 from scrape.select_dept import select_dept
 from scrape.select_subject import select_subject
 from scrape.course_search import course_search
-from scrape.open_next_page import open_next_page
+# from scrape.open_next_page import open_next_page
+from scrape.fetch_next_rows import fetch_next_rows
+from scrape.log import log
 
 app = FastAPI()
 
@@ -55,9 +58,9 @@ def login(login: Login):
   )
 
 @app.post("/api/courses")
-def courses(login: Login):
-  print("HELLO!")
+def courses(login: Login):  
   clear_log()
+  data = fetch_data()
   s = requests.Session()
   try:
     output = open_login_page(s)
@@ -66,10 +69,12 @@ def courses(login: Login):
     output = select_dept(s, open_course_search_page_output)
     output = select_subject(s, open_course_search_page_output)
     course_number_options = output.course_number_options
+    l = 0
     for course_num in course_number_options:
       search_output = course_search(
         s,
         open_course_search_page_output,
+        data,
         department="CSCI-HTR",
         subject="CSCI",
         course_num=course_num,
@@ -81,7 +86,7 @@ def courses(login: Login):
       eval_reports = output.eval_reports
       paginate_codes = search_output.paginate_codes
       if paginate_codes is not None:
-        output = open_next_page(
+        output = fetch_next_rows(
           s,
           cookie=cookie,
           p_instance=search_output.p_instance,
@@ -91,94 +96,32 @@ def courses(login: Login):
         if output.cookie is not None:
           cookie = output.cookie
         course_sections = output.course_sections
-        output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
-        eval_reports = output.eval_reports
-        for eval_report in output.eval_reports:
+        for output in eval_reports_iter(s, cookie=cookie, course_sections=course_sections):
+          if output.cookie is not None:
+            cookie = output.cookie
+          eval_report = output.eval_report
           eval_reports.append(eval_report)
+          data.add(eval_report)
+          data.write()
+          data.write_json()
+          l += 1
+          if l >= 20:
+            break
+          
+        # output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+        # eval_reports = output.eval_reports
+        # for eval_report in output.eval_reports:
+        #   eval_reports.append(eval_report)
+        #   data.add(eval_report)
+        #   data.write()
+        #   data.write_json()
+        # l += len(eval_reports)
+      # data.add_all(eval_reports=eval_reports)
         
-      with open("out.json", "w") as f:
-        json.dump(eval_reports, f, indent=2, default=json_default)
-      return CourseSearchResult(result="success")
-  except Exception as e:
-    if isinstance(e, ScrapeError):
-      print(e.message())
-      return CourseSearchError(result="error", message=e.message())
-    else:
-      raise e
-
-@app.post("/api/coursesold")
-def coursesold(login: Login):
-  print("HELLO!")
-  clear_log()
-  s = requests.Session()
-  try:
-    output = open_login_page(s)
-    output = sign_in(s, output, login.username, login.password)
-    open_course_search_page_output = open_course_search_page(s, output)
-    output = select_dept(s, open_course_search_page_output)
-    output = select_subject(s, open_course_search_page_output)
-    course_number_options = output.course_number_options
-    search_output = course_search(
-      s,
-      open_course_search_page_output,
-      department="ENGL-HTR",
-      subject="ENGL",
-      course_num="12000",
-      # department="CSCI-HTR",
-      # subject="CSCI",
-      # course_num="33500",
-    )
-    course_sections = search_output.course_sections
-    cookie = search_output.cookie
-    output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
-    cookie = output.cookie
-    eval_reports = output.eval_reports
-    # eval_reports: list[EvalReport] = []
-    # for course_section in course_sections:
-    #   if course_section.url is not None:
-    #     output = open_eval_report(s, cookie=cookie, url=course_section.url)
-    #     cookie = output.cookie
-    #     eval_reports.append(EvalReport(
-    #       course=course_section.course,
-    #       semester=course_section.semester,
-    #       professor=course_section.professor,
-    #       page=EvalReportPage(
-    #         url=course_section.url,
-    #         score_sections=output.score_sections,
-    #         expected_grades=output.expected_grades
-    #       ),
-    #     ))
-    #   else:
-    #     eval_reports.append(EvalReport(
-    #       course=course_section.course,
-    #       semester=course_section.semester,
-    #       professor=course_section.professor,
-    #       page=None,
-    #     ))
-    paginate_codes = search_output.paginate_codes
-    if paginate_codes is not None:
-      output = open_next_page(
-        s,
-        cookie=cookie,
-        p_instance=search_output.p_instance,
-        p_page_submission_id=search_output.p_page_submission_id,
-        paginate_codes=paginate_codes
-      )
-      if output.cookie is not None:
-        cookie = output.cookie
-      course_sections = output.course_sections
-      # TODO
-      print("LENGO:", len(course_sections))
-      return CourseSearchResult(result="success")
-      output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
-      # TODO
-      eval_reports = output.eval_reports
-      # for eval_report in output.eval_reports:
-      #   eval_reports.append(eval_report)
-      
-    with open("out.json", "w") as f:
-      json.dump(eval_reports, f, indent=2, default=json_default)
-    # print(eval_reports)
+    # with open("out.json", "w") as f:
+    #   json.dump(eval_reports, f, indent=2, default=json_default)
+    # data.write()
+    # data.write_json()
     return CourseSearchResult(result="success")
   except Exception as e:
     if isinstance(e, ScrapeError):
@@ -186,6 +129,87 @@ def coursesold(login: Login):
       return CourseSearchError(result="error", message=e.message())
     else:
       raise e
+
+# @app.post("/api/coursesold")
+# def coursesold(login: Login):
+#   print("HELLO!")
+#   clear_log()
+#   s = requests.Session()
+#   try:
+#     output = open_login_page(s)
+#     output = sign_in(s, output, login.username, login.password)
+#     open_course_search_page_output = open_course_search_page(s, output)
+#     output = select_dept(s, open_course_search_page_output)
+#     output = select_subject(s, open_course_search_page_output)
+#     course_number_options = output.course_number_options
+#     search_output = course_search(
+#       s,
+#       open_course_search_page_output,
+#       department="ENGL-HTR",
+#       subject="ENGL",
+#       course_num="12000",
+#       # department="CSCI-HTR",
+#       # subject="CSCI",
+#       # course_num="33500",
+#     )
+#     course_sections = search_output.course_sections
+#     cookie = search_output.cookie
+#     output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+#     cookie = output.cookie
+#     eval_reports = output.eval_reports
+#     # eval_reports: list[EvalReport] = []
+#     # for course_section in course_sections:
+#     #   if course_section.url is not None:
+#     #     output = open_eval_report(s, cookie=cookie, url=course_section.url)
+#     #     cookie = output.cookie
+#     #     eval_reports.append(EvalReport(
+#     #       course=course_section.course,
+#     #       semester=course_section.semester,
+#     #       professor=course_section.professor,
+#     #       page=EvalReportPage(
+#     #         url=course_section.url,
+#     #         score_sections=output.score_sections,
+#     #         expected_grades=output.expected_grades
+#     #       ),
+#     #     ))
+#     #   else:
+#     #     eval_reports.append(EvalReport(
+#     #       course=course_section.course,
+#     #       semester=course_section.semester,
+#     #       professor=course_section.professor,
+#     #       page=None,
+#     #     ))
+#     paginate_codes = search_output.paginate_codes
+#     if paginate_codes is not None:
+#       output = open_next_page(
+#         s,
+#         cookie=cookie,
+#         p_instance=search_output.p_instance,
+#         p_page_submission_id=search_output.p_page_submission_id,
+#         paginate_codes=paginate_codes
+#       )
+#       if output.cookie is not None:
+#         cookie = output.cookie
+#       course_sections = output.course_sections
+#       # TODO
+#       print("LENGO:", len(course_sections))
+#       return CourseSearchResult(result="success")
+#       output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+#       # TODO
+#       eval_reports = output.eval_reports
+#       # for eval_report in output.eval_reports:
+#       #   eval_reports.append(eval_report)
+      
+#     with open("out.json", "w") as f:
+#       json.dump(eval_reports, f, indent=2, default=json_default)
+#     # print(eval_reports)
+#     return CourseSearchResult(result="success")
+#   except Exception as e:
+#     if isinstance(e, ScrapeError):
+#       print(e.message())
+#       return CourseSearchError(result="error", message=e.message())
+#     else:
+#       raise e
     
 def json_default(obj: Any):
   if hasattr(obj, "__dict__"):

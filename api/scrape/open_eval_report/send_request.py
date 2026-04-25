@@ -17,7 +17,7 @@ class Response:
 def send_request(s: requests.Session, input: Input):
   request = build_request(input)
   print("Opening evaluation report...")
-  res = s.get(url=request.url, headers=request.headers)
+  res = s.get(url=request.url, headers=request.headers, timeout=5)
   log_get(
     url=request.url,
     headers=request.headers,
