@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
+from scrape.eval_url import EvalUrl
+
 @dataclass
 class Input():
   cookie: str
-
-  # Relative path; should be prefixed by 'https://orapp.hunter.cuny.edu/ords/'.
-  url: str
+  url: EvalUrl

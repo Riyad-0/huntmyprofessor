@@ -1,7 +1,7 @@
 import json
 import os;
 
-headers_file_path = os.path.join(os.path.dirname(__file__), "requestHeaders.json")
+headers_file_path = os.path.join(os.path.dirname(__file__), "request_headers.json")
 
 def parse_headers():
   with open(headers_file_path, "r") as file:

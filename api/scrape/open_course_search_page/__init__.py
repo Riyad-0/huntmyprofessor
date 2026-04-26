@@ -1,14 +1,26 @@
+from scrape.log import log_get, log
+
 from .input import Input
 
-from .. import sign_in
-from .parse_response import parse_response, Output
-from .send_request import send_request
+from .. import log_in
+from .build_request import build_request
+from .parse_response import Output, parse_response
 import requests
 
 def open_course_search_page(
   s: requests.Session,
-  sign_in_output: sign_in.Output,
+  sign_in_output: log_in.Output,
 ) -> Output:
   input = Input.from_sign_in(output=sign_in_output)
-  response = send_request(s, input)
-  return parse_response(response)
+  request = build_request(input)
+  log.info("Opening course search page")
+  res = s.get(url=request.url, headers=request.headers)
+  log_get(
+    url=request.url,
+    headers=request.headers,
+    res=res,
+    cookies=s.cookies,
+  )
+  return parse_response(res_text=res.text, cookies=s.cookies)
+  # response = send_request(s, input)
+  # return parse_response(response)

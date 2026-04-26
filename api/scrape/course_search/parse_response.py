@@ -9,8 +9,6 @@ from scrape.eval_url import EvalUrl
 from scrape.parse_cookie import parse_cookie
 from scrape.scrape_error import ScrapeError
 
-from .send_request import Response
-
 @dataclass
 class Output():
   p_instance: str
@@ -18,13 +16,22 @@ class Output():
   cookie: str
   course_sections: list[CourseSection]
   paginate_codes: PaginateCodes | None
+  eval_count: int
+  more_than: bool
 
 @dataclass
 class CourseSection:
   course: str
+  section: str | None
   semester: str
   professor: str
   url: EvalUrl
+
+  def full_name(self) -> str:
+    if self.section is None:
+      return self.course
+    else:
+      return f"{self.course} Sec: {self.section}"
 
 @dataclass
 class PaginateCodes:
@@ -50,13 +57,27 @@ def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
     semester_el = course_element.find_next_sibling(name="td", attrs={'headers': 'SEMETER'})
     professor_el = course_element.find_next_sibling(name="td", attrs={'headers': 'INST_NAME'})
     eval_el = course_element.find_next_sibling(name="td", attrs={'headers': 'EVAL_TYPE'})
-    course = course_element.text
+    course_str = course_element.text
+    if not isinstance(course_str, str):
+      continue
+    split = course_str.split(sep="Sec:", maxsplit=1)
+    if len(split) == 2:
+      course = split[0].rstrip()
+      section = split[1].lstrip()
+    else:
+      course = course_str
+      section = None
+
     if semester_el is None:
       continue
     semester = semester_el.text
+    if not isinstance(semester, str):
+      continue
     if professor_el is None:
       continue
     professor = professor_el.text
+    if not isinstance(professor, str):
+      continue
     if eval_el is None:
       continue
     link_el = eval_el.find(name="a")
@@ -69,6 +90,7 @@ def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
 
     course_sections.append(CourseSection(
       course=course,
+      section=section,
       semester=semester,
       professor=professor,
       url=EvalUrl(rel_path=url),
@@ -160,6 +182,24 @@ def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
   # else:
   course_sections = parse_course_sections(soup)
   paginate_codes = parse_paginate_codes(soup=soup, res_text=res_text)
+  paginate_select_el = soup.find(attrs={'name': 'X01'})
+  eval_count = len(course_sections)
+  more_than = False
+  if paginate_select_el is not None:
+    paginate_select_text = paginate_select_el.text
+    if isinstance(paginate_select_text, str):
+      if "more than 2000" in paginate_select_text:
+        eval_count = 2000
+        more_than = True
+      else:
+        try:
+          i = paginate_select_text.rindex(" of ")
+          i += len(" of ")
+          eval_count = int(paginate_select_text[i:])
+        except ValueError:
+          pass
+
+
       
   # courses = [course_element.text for course_element in soup.find_all(attrs={'headers': 'COURSE'})]
   return Output(
@@ -168,4 +208,6 @@ def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
     cookie=cookie,
     course_sections=course_sections,
     paginate_codes=paginate_codes,
+    eval_count=eval_count,
+    more_than=more_than,
   )

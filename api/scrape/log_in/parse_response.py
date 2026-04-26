@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup
 
 from .input import Input
 from ..parse_cookie import parse_cookie
-from .send_request import Response
 from ..scrape_error import ScrapeError
 from typing import Literal, override
+from requests.sessions import RequestsCookieJar
 
 class Output:
   def __init__(
@@ -53,8 +53,8 @@ class HTMLError(ScrapeError):
   
 type MissingElement = Literal["data-for=P3_LINK", "pPageItemsProtected", "pPageSubmissionId"]
 
-def parse_response(response: Response, input: Input) -> Output:
-  soup = BeautifulSoup(response.text, 'html.parser')
+def parse_response(res_text: str, cookies: RequestsCookieJar, input: Input) -> Output:
+  soup = BeautifulSoup(res_text, 'html.parser')
   ck_element = soup.find(attrs={'data-for': 'P3_LINK'})
   p_instance_element = soup.find(id='pInstance')
   p_page_items_protected_element = soup.find(id='pPageItemsProtected')
@@ -71,7 +71,7 @@ def parse_response(response: Response, input: Input) -> Output:
       missing_elements.add("pPageItemsProtected")
     if p_page_submission_id_element is None:
       missing_elements.add("pPageSubmissionId")
-    raise HTMLError(missing=missing_elements, response_text=response.text)
+    raise HTMLError(missing=missing_elements, response_text=res_text)
   p_instance = None if p_instance_element is None \
     else p_instance_element.get("value")
   if not isinstance(p_instance, str):
@@ -93,9 +93,9 @@ def parse_response(response: Response, input: Input) -> Output:
       missing_elements.add("pPageItemsProtected")
     if not isinstance(p_page_submission_id, str):
       missing_elements.add("pPageSubmissionId")
-    raise HTMLError(missing=missing_elements, response_text=response.text)
+    raise HTMLError(missing=missing_elements, response_text=res_text)
 
-  cookie = parse_cookie(response.cookies)
+  cookie = parse_cookie(cookies)
   if cookie is None:
     raise CookieError()
   return Output(
@@ -105,4 +105,3 @@ def parse_response(response: Response, input: Input) -> Output:
     p_page_items_protected=p_page_items_protected,
     p_page_submission_id=p_page_submission_id
   )
-

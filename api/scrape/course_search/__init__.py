@@ -38,4 +38,9 @@ def course_search(
     res=res,
     cookies=s.cookies
   )
-  return parse_response(res_text=res.text, cookies=s.cookies)
+  output = parse_response(res_text=res.text, cookies=s.cookies)
+  if output.more_than:
+    log.warning(f"Found more than {output.eval_count} evals for: {subject} {course_num}")
+  else:
+    log.info(f"Found {output.eval_count} evals for: {subject} {course_num}")
+  return output

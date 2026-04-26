@@ -8,8 +8,6 @@ from requests.sessions import RequestsCookieJar
 from scrape.parse_cookie import parse_cookie
 from scrape.course_search.parse_response import CourseSection, PaginateCodes, parse_course_sections, parse_paginate_codes
 
-from .send_request import Response
-
 @dataclass
 class Output():
   cookie: str | None

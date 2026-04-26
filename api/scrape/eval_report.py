@@ -5,6 +5,7 @@ from scrape.eval_url_code import EvalUrlCode
 @dataclass
 class EvalReport:
   course: str
+  section: str | None
   semester: str
   professor: str
   page: EvalReportPage

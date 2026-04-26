@@ -3,14 +3,14 @@ import os
 
 from .input import Input;
 
-headers_file_path = os.path.join(os.path.dirname(__file__), "requestHeaders.json")
+headers_file_path = os.path.join(os.path.dirname(__file__), "request_headers.json")
 
 def parse_headers():
   with open(headers_file_path, "r") as file:
     headers = json.load(file)
     return headers
 
-partial_url = "https://orapp.hunter.cuny.edu/ords/"
+# partial_url = "https://orapp.hunter.cuny.edu/ords/"
 partial_headers = parse_headers()
 
 class Request:
@@ -24,9 +24,9 @@ class Request:
 
 def build_request(input: Input):
   cookie = input.cookie
-  rel_url = input.url
+  url = input.url
   return Request(
-    url=partial_url + rel_url,
+    url=url.absolute(),
     headers=partial_headers | {
       "Cookie": cookie
     },

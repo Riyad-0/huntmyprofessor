@@ -2,10 +2,10 @@ import json
 
 from bs4 import BeautifulSoup
 from ..parse_cookie import parse_cookie
-from .send_request import Response
 from ..scrape_error import ScrapeError
 from typing import override
 from dataclasses import dataclass
+from requests.sessions import RequestsCookieJar
 
 @dataclass
 class SelectElementOption:
@@ -76,28 +76,28 @@ def get_ajax_identifier(res_text: str, pattern_id: str):
   ajax_identifier = json.loads(f'"{raw_ajax_identifier}"')
   return ajax_identifier
 
-def parse_response(response: Response) -> Output:
-  soup = BeautifulSoup(response.text, 'html.parser')
+def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+  soup = BeautifulSoup(res_text, 'html.parser')
   pattern = '(function(){apex.widget.selectList("#P6_SUBJECT"'
-  i = response.text.find(pattern)
+  i = res_text.find(pattern)
   if i == -1:
-    raise AjaxIdentifierError(res_text=response.text)
+    raise AjaxIdentifierError(res_text=res_text)
   i += len(pattern)
   pattern = '"ajaxIdentifier":"'
-  j = response.text.find(pattern, i)
+  j = res_text.find(pattern, i)
   if j == -1:
-    raise AjaxIdentifierError(res_text=response.text)
+    raise AjaxIdentifierError(res_text=res_text)
   start = j + len(pattern)
-  end = response.text.find('"', start)
+  end = res_text.find('"', start)
   if end == -1:
-    raise AjaxIdentifierError(res_text=response.text)
-  raw_ajax_identifier = response.text[start:end]
+    raise AjaxIdentifierError(res_text=res_text)
+  raw_ajax_identifier = res_text[start:end]
 
   # This is necessary to replace escape sequences (e.g. \\u002F) with the
   # proper character (e.g. /).
   dept_ajax_identifier = json.loads(f'"{raw_ajax_identifier}"')
 
-  subject_ajax_identifier = get_ajax_identifier(response.text, "P6_CATALOG_NUM")
+  subject_ajax_identifier = get_ajax_identifier(res_text, "P6_CATALOG_NUM")
   
   dept_select_element = soup.find(id='P6_DEPT')
   p_instance_element = soup.find(id='pInstance')
@@ -109,7 +109,7 @@ def parse_response(response: Response) -> Output:
     p_page_submission_id_element is None or
     p_page_items_protected_element is None
   ):
-    raise HTMLError(response.text)
+    raise HTMLError(res_text)
   dept_options: list[SelectElementOption] = []
   for select_el in dept_select_element.find_all(name='option'):
     text = select_el.text
@@ -124,9 +124,9 @@ def parse_response(response: Response) -> Output:
     not isinstance(p_page_submission_id, str) or
     not isinstance(p_page_items_protected, str)
   ):
-    raise HTMLError(response.text)
+    raise HTMLError(res_text)
 
-  cookie = parse_cookie(response.cookies)
+  cookie = parse_cookie(cookies)
   if cookie is None:
     raise CookieError()
   return Output(
@@ -138,4 +138,3 @@ def parse_response(response: Response) -> Output:
     p_page_items_protected=p_page_items_protected,
     dept_options=dept_options,
   )
-

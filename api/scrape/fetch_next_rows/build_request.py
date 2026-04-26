@@ -3,7 +3,7 @@ import os
 
 from .input import Input;
 
-headers_file_path = os.path.join(os.path.dirname(__file__), "requestHeaders.json")
+headers_file_path = os.path.join(os.path.dirname(__file__), "request_headers.json")
 
 def parse_headers():
   with open(headers_file_path, "r") as file:
@@ -44,7 +44,7 @@ def build_request(input: Input):
       'p_request': f'PLUGIN={p_request}',
       'p_widget_action': 'paginate',
       'p_pg_min_row': '21',
-      'p_pg_max_rows': '1980',
+      'p_pg_max_rows': '1980', # Normally 20
       'p_pg_rows_fetched': '20',
       'x01': x01,
       'p_json': f'{{"salt":"{salt}"}}',

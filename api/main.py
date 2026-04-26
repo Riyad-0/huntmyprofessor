@@ -1,22 +1,22 @@
-import json
 from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
+from scrape.eval_report import EvalReport
 from scrape.data import fetch_data
-from scrape.open_eval_reports import open_eval_reports, eval_reports_iter
+from scrape.open_eval_reports import open_eval_reports
 from scrape.log import clear_log
 from scrape.scrape_error import ScrapeError
 from scrape.open_login_page import open_login_page
-from scrape.sign_in import sign_in
+from scrape.log_in import log_in
 from scrape.professor_search import professor_search
 from scrape.open_course_search_page import open_course_search_page
 from scrape.select_dept import select_dept
 from scrape.select_subject import select_subject
 from scrape.course_search import course_search
-# from scrape.open_next_page import open_next_page
 from scrape.fetch_next_rows import fetch_next_rows
+from scrape.fetch_max_rows import fetch_max_rows
 from scrape.log import log
 
 app = FastAPI()
@@ -48,7 +48,7 @@ class CourseSearchError(CourseSearchResult):
 def login(login: Login):
   s = requests.Session()
   output = open_login_page(s)
-  output = sign_in(s, output, login.username, login.password)
+  output = log_in(s, output, login.username, login.password)
   output = professor_search(s, output, search_text="washburn, alexander")
   print(output.courses)
   
@@ -58,13 +58,101 @@ def login(login: Login):
   )
 
 @app.post("/api/courses")
+def courses2(login: Login):  
+  clear_log()
+  data = fetch_data()
+  s = requests.Session()
+  try:
+    output = open_login_page(s)
+    output = log_in(s, output, login.username, login.password)
+    open_course_search_page_output = open_course_search_page(s, output)
+    output = select_dept(s, open_course_search_page_output)
+    output = select_subject(s, open_course_search_page_output)
+    course_number_options = ["12000", "12700"]
+    did_fetch_max_rows = False
+    for course_num in course_number_options:
+      search_output = course_search(
+        s,
+        open_course_search_page_output,
+        data,
+        department="CSCI-HTR",
+        subject="CSCI",
+        course_num=course_num,
+      )
+      log.warning(f"Found {len(search_output.course_sections)} evals for: CSCI {course_num}")
+      
+      course_sections = search_output.course_sections
+      cookie = search_output.cookie
+      eval_reports: list[EvalReport] = []
+      paginate_codes = search_output.paginate_codes
+      if did_fetch_max_rows or paginate_codes is None:
+        l = 0
+        for output in open_eval_reports(s, cookie=cookie, course_sections=course_sections):
+          if output.cookie is not None:
+            cookie = output.cookie
+          eval_report = output.eval_report
+          eval_reports.append(eval_report)
+          data.add(eval_report)
+          data.write()
+          data.write_json()
+          l += 1
+          if l >= 30:
+            break
+      else:
+        did_fetch_max_rows = True
+        output = fetch_max_rows(
+          s,
+          cookie=cookie,
+          p_instance=search_output.p_instance,
+          p_page_submission_id=search_output.p_page_submission_id,
+          paginate_codes=paginate_codes
+        )
+        if output.cookie is not None:
+          cookie = output.cookie
+        course_sections = output.course_sections
+        l = 0
+        for output in open_eval_reports(s, cookie=cookie, course_sections=course_sections):
+          if output.cookie is not None:
+            cookie = output.cookie
+          eval_report = output.eval_report
+          eval_reports.append(eval_report)
+          data.add(eval_report)
+          data.write()
+          data.write_json()
+          l += 1
+          if l >= 30:
+            break
+          
+        # output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+        # eval_reports = output.eval_reports
+        # for eval_report in output.eval_reports:
+        #   eval_reports.append(eval_report)
+        #   data.add(eval_report)
+        #   data.write()
+        #   data.write_json()
+        # l += len(eval_reports)
+      # data.add_all(eval_reports=eval_reports)
+        
+    # with open("out.json", "w") as f:
+    #   json.dump(eval_reports, f, indent=2, default=json_default)
+    # data.write()
+    # data.write_json()
+    return CourseSearchResult(result="success")
+  except Exception as e:
+    if isinstance(e, ScrapeError):
+      print(e.message())
+      return CourseSearchError(result="error", message=e.message())
+    else:
+      raise e
+
+# @app.post("/api/courses")
 def courses(login: Login):  
   clear_log()
   data = fetch_data()
   s = requests.Session()
   try:
     output = open_login_page(s)
-    output = sign_in(s, output, login.username, login.password)
+    output = log_in(s, output, login.username, login.password)
     open_course_search_page_output = open_course_search_page(s, output)
     output = select_dept(s, open_course_search_page_output)
     output = select_subject(s, open_course_search_page_output)
@@ -81,9 +169,18 @@ def courses(login: Login):
       )
       course_sections = search_output.course_sections
       cookie = search_output.cookie
-      output = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
-      cookie = output.cookie
-      eval_reports = output.eval_reports
+      eval_reports: list[EvalReport] = []
+      for output in open_eval_reports(s, cookie=cookie, course_sections=course_sections):
+        if output.cookie is not None:
+          cookie = output.cookie
+        eval_report = output.eval_report
+        eval_reports.append(eval_report)
+        data.add(eval_report)
+        data.write()
+        data.write_json()
+        l += 1
+        if l >= 20:
+          break
       paginate_codes = search_output.paginate_codes
       if paginate_codes is not None:
         output = fetch_next_rows(
@@ -96,7 +193,7 @@ def courses(login: Login):
         if output.cookie is not None:
           cookie = output.cookie
         course_sections = output.course_sections
-        for output in eval_reports_iter(s, cookie=cookie, course_sections=course_sections):
+        for output in open_eval_reports(s, cookie=cookie, course_sections=course_sections):
           if output.cookie is not None:
             cookie = output.cookie
           eval_report = output.eval_report

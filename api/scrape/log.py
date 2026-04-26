@@ -110,7 +110,7 @@ def log_post_json(
 
 def serialize_default(x: Any):
   if isinstance(x, CaseInsensitiveDict) or isinstance(x, RequestsCookieJar):
-    return dict(x)
+    return dict(x) # type: ignore
   raise TypeError(f"Object of type {type(x).__name__} is not JSON serializable")
 
 # def log(s: str):

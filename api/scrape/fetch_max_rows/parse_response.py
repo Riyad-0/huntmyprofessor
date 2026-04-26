@@ -3,11 +3,10 @@
 from dataclasses import dataclass
 
 from bs4 import BeautifulSoup
+from requests.sessions import RequestsCookieJar
 
 from scrape.parse_cookie import parse_cookie
 from scrape.course_search.parse_response import CourseSection, PaginateCodes, parse_course_sections, parse_paginate_codes
-
-from .send_request import Response
 
 @dataclass
 class Output():
@@ -15,11 +14,11 @@ class Output():
   course_sections: list[CourseSection]
   paginate_codes: PaginateCodes | None
 
-def parse_response(response: Response) -> Output:
-  soup = BeautifulSoup(response.text, 'html.parser')
-  cookie = parse_cookie(response.cookies)
+def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+  soup = BeautifulSoup(res_text, 'html.parser')
+  cookie = parse_cookie(cookies)
   course_sections = parse_course_sections(soup)
-  paginate_codes = parse_paginate_codes(soup=soup, res_text=response.text)
+  paginate_codes = parse_paginate_codes(soup=soup, res_text=res_text)
   return Output(
     cookie=cookie,
     course_sections=course_sections,

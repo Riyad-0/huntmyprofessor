@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .. import sign_in
+from .. import log_in
 
 @dataclass
 class Input():
@@ -11,7 +11,7 @@ class Input():
 
   @staticmethod
   def from_sign_in(
-    output: sign_in.Output,
+    output: log_in.Output,
   ) -> Input:
     return Input(
       cookie=output.cookie,

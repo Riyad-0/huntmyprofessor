@@ -3,13 +3,59 @@ import { useState } from 'react'
 function App() {
   return (
     <>
-      <Login />
+      <Scrape />
     </>
   );
 }
 
 type Submit = React.SubmitEventHandler<HTMLFormElement>;
 type Change = React.ChangeEventHandler<HTMLInputElement, HTMLInputElement>;
+
+function Scrape() {
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [courses, setCourses] = useState<string[] | undefined>();
+  const onSubmit: Submit = async e => {
+    e.preventDefault();
+    console.log("HEYO");
+    const res = await fetch("/api/courses", {
+      body: JSON.stringify({
+        username,
+        password
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST",
+    });
+    // const body = await res.json();
+    // if (body.result === "success") {
+    //   setOptions(body.options);
+    //   console.log(body.options);
+    // } else {
+    //   console.log(body.result);
+    // }
+  };
+  const onChangeUsername: Change = async e => {
+    setUsername(e.target.value);
+  };
+  const onChangePassword: Change = async e => {
+    setPassword(e.target.value);
+  };
+  return (
+    <>
+      <form onSubmit={onSubmit}>
+        <input onChange={onChangeUsername} value={username} />
+        <input onChange={onChangePassword} value={password} />
+        <button type='submit'>Submit</button>
+      </form>
+      {courses === undefined ?
+        <></> :
+        <div>{courses}</div>
+      }
+    </>
+  );
+}
 
 function Login() {
   const [username, setUsername] = useState<string>("");

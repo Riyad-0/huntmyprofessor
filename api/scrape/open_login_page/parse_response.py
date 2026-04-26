@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
+from requests.sessions import RequestsCookieJar
 from ..parse_cookie import parse_cookie
-from .send_request import Response
 from ..scrape_error import ScrapeError
 from typing import override
 
@@ -35,8 +35,8 @@ class HTMLError(ScrapeError):
   def message(self) -> str:
     return loginPageHTMLErrorMessage
 
-def parse_response(response: Response) -> Output:
-  soup = BeautifulSoup(response.text, 'html.parser')
+def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+  soup = BeautifulSoup(res_text, 'html.parser')
   p_instance_element = soup.find(id='pInstance')
   p_page_submission_id_element = soup.find(id='pPageSubmissionId')
   p_page_items_protected_element = soup.find(id='pPageItemsProtected')
@@ -56,7 +56,7 @@ def parse_response(response: Response) -> Output:
   ):
     raise HTMLError()
 
-  cookie = parse_cookie(response.cookies)
+  cookie = parse_cookie(cookies)
   if cookie is None:
     raise CookieError()
   return Output(
@@ -65,4 +65,3 @@ def parse_response(response: Response) -> Output:
     p_page_submission_id=p_page_submission_id,
     p_page_items_protected=p_page_items_protected
   )
-
