@@ -15,6 +15,7 @@ def course_search(
   department: str,
   subject: str,
   course_num: str,
+  did_fetch_max_rows: bool,
 ) -> Output:
   input = Input.from_open_course_search_page(
     output=open_course_search_page_output,
@@ -38,9 +39,12 @@ def course_search(
     res=res,
     cookies=s.cookies
   )
-  output = parse_response(res_text=res.text, cookies=s.cookies)
-  if output.more_than:
-    log.warning(f"Found more than {output.eval_count} evals for: {subject} {course_num}")
+  output = parse_response(res_text=res.text, cookies=s.cookies, did_fetch_max_rows=did_fetch_max_rows)
+  if output.eval_count is None:
+    log.warning(f"Couldn't count evals for: {subject} {course_num}")
   else:
-    log.info(f"Found {output.eval_count} evals for: {subject} {course_num}")
+    if output.more_than:
+      log.warning(f"Found more than {output.eval_count} evals for: {subject} {course_num}")
+    else:
+      log.info(f"Found {output.eval_count} evals for: {subject} {course_num}")
   return output

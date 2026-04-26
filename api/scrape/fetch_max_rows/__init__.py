@@ -22,7 +22,7 @@ def fetch_max_rows(
   )
 
   request = build_request(input)
-  log.info("Fetching next rows")
+  log.info("Fetching max rows")
   res = s.post(
     url=request.url,
     headers=request.headers,

@@ -9,14 +9,25 @@ from scrape.eval_url import EvalUrl
 from scrape.parse_cookie import parse_cookie
 from scrape.scrape_error import ScrapeError
 
+type ParseResult = Parsed | NeedsPaginate
+
+@dataclass
+class Parsed:
+  course_sections: list[CourseSection]
+
+@dataclass
+class NeedsPaginate:
+  paginate_codes: PaginateCodes
+
 @dataclass
 class Output():
   p_instance: str
   p_page_submission_id: str
   cookie: str
-  course_sections: list[CourseSection]
+  # course_sections: list[CourseSection]
+  parse_result: ParseResult
   paginate_codes: PaginateCodes | None
-  eval_count: int
+  eval_count: int | None
   more_than: bool
 
 @dataclass
@@ -128,7 +139,7 @@ def parse_paginate_codes(soup: BeautifulSoup, res_text: str) -> PaginateCodes | 
 
   return PaginateCodes(x01=x01, p_request=p_request)
 
-def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+def parse_response(res_text: str, cookies: RequestsCookieJar, did_fetch_max_rows: bool) -> Output:
   soup = BeautifulSoup(res_text, 'html.parser')
   p_instance_element = soup.find(id='pInstance')
   p_page_submission_id_element = soup.find(id='pPageSubmissionId')
@@ -180,10 +191,16 @@ def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
   # if next_page_button is None:
   #   paginate_codes = None
   # else:
-  course_sections = parse_course_sections(soup)
+  eval_count = None
   paginate_codes = parse_paginate_codes(soup=soup, res_text=res_text)
+  if did_fetch_max_rows or paginate_codes is None:
+    course_sections = parse_course_sections(soup)
+    eval_count = len(course_sections)
+    parse_result = Parsed(course_sections=course_sections)
+  else:
+    parse_result = NeedsPaginate(paginate_codes=paginate_codes)
+  # course_sections = parse_course_sections(soup)
   paginate_select_el = soup.find(attrs={'name': 'X01'})
-  eval_count = len(course_sections)
   more_than = False
   if paginate_select_el is not None:
     paginate_select_text = paginate_select_el.text
@@ -206,7 +223,8 @@ def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
     p_instance=p_instance,
     p_page_submission_id=p_page_submission_id,
     cookie=cookie,
-    course_sections=course_sections,
+    # course_sections=course_sections,
+    parse_result=parse_result,
     paginate_codes=paginate_codes,
     eval_count=eval_count,
     more_than=more_than,
