@@ -7,7 +7,7 @@ from scrape.eval_url_code import EvalUrlCode
 from scrape.eval_report import EvalReport, EvalReportPage, EvalReportQuestion, ScoreSection
 
 # Schema
-# 1240 bits (155 bytes)
+# 1138 bits (143 bytes)
 # 14 bits course
 # 14 bits section
 # 10 bits semester
@@ -29,7 +29,7 @@ from scrape.eval_report import EvalReport, EvalReportPage, EvalReportQuestion, S
 # 60 bits expected_grades - 6 options
 # 10 bits option
 
-eval_nbytes = 155
+eval_nbytes = 143
 course_nbits = 14
 section_nbits = 14
 semester_nbits = 10
