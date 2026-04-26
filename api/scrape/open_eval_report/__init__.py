@@ -8,7 +8,7 @@ from .parse_response import Output, parse_response
 from scrape.log import log
 import requests
 
-def open_eval_report(
+async def open_eval_report(
   s: requests.Session,
   cookie: str,
   course_section: CourseSection,

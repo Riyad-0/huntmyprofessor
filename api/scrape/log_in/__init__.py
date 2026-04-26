@@ -7,7 +7,7 @@ from .build_request import build_request
 from .parse_response import Output, parse_response
 import requests
 
-def log_in(
+async def log_in(
   s: requests.Session,
   open_login_page_output: open_login_page.Output,
   username: str,

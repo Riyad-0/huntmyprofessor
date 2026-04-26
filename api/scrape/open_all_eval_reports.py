@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generator
+from typing import AsyncGenerator
 
 import requests
 
@@ -12,11 +12,11 @@ from scrape.fetch_max_rows import fetch_max_rows
 
 @dataclass
 class Output:
-  outputs: Generator[open_eval_reports.Output]
+  outputs: AsyncGenerator[open_eval_reports.Output]
   did_fetch_max_rows: bool
   cookie: str
 
-def open_all_eval_reports(
+async def open_all_eval_reports(
   s: requests.Session,
   course_search_output: course_search.Output,
   data: Data,
@@ -28,7 +28,7 @@ def open_all_eval_reports(
       outputs = open_eval_reports.open_eval_reports(s, cookie=cookie, course_sections=course_sections)
     case NeedsPaginate(paginate_codes):
       did_fetch_max_rows = True
-      output = fetch_max_rows(
+      output = await fetch_max_rows(
         s,
         data=data,
         cookie=cookie,

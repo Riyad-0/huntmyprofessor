@@ -5,7 +5,7 @@ from . import request
 import requests
 from scrape.log import log
 
-def open_login_page(s: requests.Session) -> Output:
+async def open_login_page(s: requests.Session) -> Output:
   # response = send_request(s)
   log.info("Opening login page")
   res = s.get(url=request.url, headers=request.headers)

@@ -8,7 +8,7 @@ from .build_request import build_request
 from .parse_response import Output, parse_response
 import requests
 
-def course_search(
+async def course_search(
   s: requests.Session,
   open_course_search_page_output: open_course_search_page.Output,
   data: Data,

@@ -5,7 +5,7 @@ from .build_request import build_request
 from .parse_response import parse_response, Output
 import requests
 
-def select_subject(
+async def select_subject(
   s: requests.Session,
   open_course_search_page_output: open_course_search_page.Output,
 ) -> Output:

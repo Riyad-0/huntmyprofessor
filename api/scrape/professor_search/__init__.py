@@ -5,7 +5,7 @@ from .build_request import build_request
 from .parse_response import Output, parse_response
 import requests
 
-def professor_search(
+async def professor_search(
   s: requests.Session,
   sign_in_output: log_in.Output,
   search_text: str

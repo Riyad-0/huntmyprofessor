@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generator
+from typing import AsyncGenerator
 import requests
 
 # from scrape import course_search, fetch_max_rows
@@ -47,13 +47,13 @@ class Output:
 #         if l >= 30:
 #           break
 
-def open_eval_reports(
+async def open_eval_reports(
   s: requests.Session,
   cookie: str,
   course_sections: list[CourseSection],
-) -> Generator[Output]:
+) -> AsyncGenerator[Output]:
   for course_section in course_sections:
-    output = open_eval_report(s, cookie=cookie, course_section=course_section)
+    output = await open_eval_report(s, cookie=cookie, course_section=course_section)
     yield Output(
       cookie=output.cookie,
       eval_report=EvalReport(

@@ -7,7 +7,7 @@ from .build_request import build_request
 from .parse_response import Output, parse_response
 import requests
 
-def open_course_search_page(
+async def open_course_search_page(
   s: requests.Session,
   sign_in_output: log_in.Output,
 ) -> Output:

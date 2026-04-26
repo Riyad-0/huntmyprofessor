@@ -8,7 +8,7 @@ from .parse_response import Output, parse_response
 from .build_request import build_request
 import requests
 
-def fetch_max_rows(
+async def fetch_max_rows(
   s: requests.Session,
   data: Data,
   cookie: str,
