@@ -1,3 +1,4 @@
+from scrape.data import Data
 from scrape.log import log_post, log
 from scrape.course_search.parse_response import PaginateCodes
 
@@ -9,6 +10,7 @@ import requests
 
 def fetch_max_rows(
   s: requests.Session,
+  data: Data,
   cookie: str,
   p_instance: str,
   p_page_submission_id: str,
@@ -37,4 +39,4 @@ def fetch_max_rows(
   )
 
   # response = send_request(s, input)
-  return parse_response(res_text=res.text, cookies=s.cookies)
+  return parse_response(res_text=res.text, cookies=s.cookies, data=data)

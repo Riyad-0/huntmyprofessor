@@ -5,9 +5,11 @@ from typing import override
 from bs4 import BeautifulSoup
 from requests.sessions import RequestsCookieJar
 
+from scrape.data import Data
 from scrape.eval_url import EvalUrl
 from scrape.parse_cookie import parse_cookie
 from scrape.scrape_error import ScrapeError
+from scrape.log import log
 
 type ParseResult = Parsed | NeedsPaginate
 
@@ -61,10 +63,17 @@ class CookieError(ScrapeError):
   def message(self):
     return "Cookie error"
   
-def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
+@dataclass
+class ParseCourseSectionsOutput:
+  course_sections: list[CourseSection]
+  eval_count: int
+
+def parse_course_sections(soup: BeautifulSoup, data: Data) -> ParseCourseSectionsOutput:
   course_elements = soup.find_all(name="td", attrs={'headers': 'COURSE'})
   course_sections: list[CourseSection] = []
+  n = 0
   for course_element in course_elements:
+    n += 1
     semester_el = course_element.find_next_sibling(name="td", attrs={'headers': 'SEMETER'})
     professor_el = course_element.find_next_sibling(name="td", attrs={'headers': 'INST_NAME'})
     eval_el = course_element.find_next_sibling(name="td", attrs={'headers': 'EVAL_TYPE'})
@@ -99,6 +108,15 @@ def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
       continue
     url = href
 
+    if data.contains(
+      course=course,
+      section=section,
+      semester=semester,
+      professor=professor,
+    ):
+      log.info(f"Skipping duplicate: {course} Sec: {section}, {semester}, {professor}")
+      continue
+
     course_sections.append(CourseSection(
       course=course,
       section=section,
@@ -106,7 +124,10 @@ def parse_course_sections(soup: BeautifulSoup) -> list[CourseSection]:
       professor=professor,
       url=EvalUrl(rel_path=url),
     ))
-  return course_sections
+  return ParseCourseSectionsOutput(
+    course_sections=course_sections,
+    eval_count=n,
+  )
 
 def parse_paginate_codes(soup: BeautifulSoup, res_text: str) -> PaginateCodes | None:
   next_page_button = soup.find(class_="t-Report-paginationLink--next")
@@ -139,7 +160,12 @@ def parse_paginate_codes(soup: BeautifulSoup, res_text: str) -> PaginateCodes | 
 
   return PaginateCodes(x01=x01, p_request=p_request)
 
-def parse_response(res_text: str, cookies: RequestsCookieJar, did_fetch_max_rows: bool) -> Output:
+def parse_response(
+  res_text: str,
+  cookies: RequestsCookieJar,
+  did_fetch_max_rows: bool,
+  data: Data,
+) -> Output:
   soup = BeautifulSoup(res_text, 'html.parser')
   p_instance_element = soup.find(id='pInstance')
   p_page_submission_id_element = soup.find(id='pPageSubmissionId')
@@ -194,9 +220,9 @@ def parse_response(res_text: str, cookies: RequestsCookieJar, did_fetch_max_rows
   eval_count = None
   paginate_codes = parse_paginate_codes(soup=soup, res_text=res_text)
   if did_fetch_max_rows or paginate_codes is None:
-    course_sections = parse_course_sections(soup)
-    eval_count = len(course_sections)
-    parse_result = Parsed(course_sections=course_sections)
+    output = parse_course_sections(soup=soup, data=data)
+    eval_count = output.eval_count
+    parse_result = Parsed(course_sections=output.course_sections)
   else:
     parse_result = NeedsPaginate(paginate_codes=paginate_codes)
   # course_sections = parse_course_sections(soup)

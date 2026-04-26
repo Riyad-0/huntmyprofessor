@@ -39,7 +39,12 @@ def course_search(
     res=res,
     cookies=s.cookies
   )
-  output = parse_response(res_text=res.text, cookies=s.cookies, did_fetch_max_rows=did_fetch_max_rows)
+  output = parse_response(
+    res_text=res.text,
+    cookies=s.cookies,
+    did_fetch_max_rows=did_fetch_max_rows,
+    data=data,
+  )
   if output.eval_count is None:
     log.warning(f"Couldn't count evals for: {subject} {course_num}")
   else:

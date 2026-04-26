@@ -3,10 +3,9 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
-from scrape.course_search.parse_response import NeedsPaginate, Parsed
+from scrape.open_all_eval_reports import open_all_eval_reports
 from scrape.eval_report import EvalReport
 from scrape.data import fetch_data
-from scrape.open_eval_reports import open_eval_reports
 from scrape.log import clear_log
 from scrape.scrape_error import ScrapeError
 from scrape.open_login_page import open_login_page
@@ -16,9 +15,6 @@ from scrape.open_course_search_page import open_course_search_page
 from scrape.select_dept import select_dept
 from scrape.select_subject import select_subject
 from scrape.course_search import course_search
-from scrape.fetch_next_rows import fetch_next_rows
-from scrape.fetch_max_rows import fetch_max_rows
-from scrape.log import log
 
 app = FastAPI()
 
@@ -81,46 +77,43 @@ def courses2(login: Login):
         course_num=course_num,
         did_fetch_max_rows=did_fetch_max_rows,
       )
-      cookie = search_output.cookie
+      # cookie = search_output.cookie
+      # match search_output.parse_result:
+      #   case Parsed(course_sections):
+      #     evals_iter = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+      #   case NeedsPaginate(paginate_codes):
+      #     did_fetch_max_rows = True
+      #     output = fetch_max_rows(
+      #       s,
+      #       cookie=cookie,
+      #       p_instance=search_output.p_instance,
+      #       p_page_submission_id=search_output.p_page_submission_id,
+      #       paginate_codes=paginate_codes
+      #     )
+      #     if output.cookie is not None:
+      #       cookie = output.cookie
+      #     course_sections = output.course_sections
+      #     evals_iter = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
+      eval_reports_output = open_all_eval_reports(
+        s,
+        data=data,
+        course_search_output=search_output,
+        did_fetch_max_rows=did_fetch_max_rows,
+      )
+      did_fetch_max_rows = eval_reports_output.did_fetch_max_rows
       eval_reports: list[EvalReport] = []
-      match search_output.parse_result:
-        case Parsed(course_sections):
-          l = 0
-          for output in open_eval_reports(s, cookie=cookie, course_sections=course_sections):
-            if output.cookie is not None:
-              cookie = output.cookie
-            eval_report = output.eval_report
-            eval_reports.append(eval_report)
-            data.add(eval_report)
-            data.write()
-            data.write_json()
-            l += 1
-            if l >= 30:
-              break
-        case NeedsPaginate(paginate_codes):
-          did_fetch_max_rows = True
-          output = fetch_max_rows(
-            s,
-            cookie=cookie,
-            p_instance=search_output.p_instance,
-            p_page_submission_id=search_output.p_page_submission_id,
-            paginate_codes=paginate_codes
-          )
-          if output.cookie is not None:
-            cookie = output.cookie
-          course_sections = output.course_sections
-          l = 0
-          for output in open_eval_reports(s, cookie=cookie, course_sections=course_sections):
-            if output.cookie is not None:
-              cookie = output.cookie
-            eval_report = output.eval_report
-            eval_reports.append(eval_report)
-            data.add(eval_report)
-            data.write()
-            data.write_json()
-            l += 1
-            if l >= 30:
-              break
+      l = 0
+      for output in eval_reports_output.outputs:
+        # if output.cookie is not None:
+          # cookie = output.cookie
+        eval_report = output.eval_report
+        eval_reports.append(eval_report)
+        data.add(eval_report)
+        data.write()
+        data.write_json()
+        l += 1
+        if l >= 30:
+          break
       # log.warning(f"Found {len(search_output.course_sections)} evals for: CSCI {course_num}")
       
       # course_sections = search_output.course_sections
