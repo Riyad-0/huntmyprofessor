@@ -2,12 +2,13 @@ from typing import Any
 
 from fastapi import FastAPI
 import httpx
+from httpx_limiter import AsyncRateLimitedTransport, Rate
+from httpx_limiter.aiolimiter import AiolimiterAsyncLimiter
 from pydantic import BaseModel
-import requests
 from scrape.open_all_eval_reports import open_all_eval_reports
 from scrape.eval_report import EvalReport
 from scrape.data import fetch_data
-from scrape.log import clear_log
+from scrape.log import clear_log, log
 from scrape.scrape_error import ScrapeError
 from scrape.open_login_page import open_login_page
 from scrape.log_in import log_in
@@ -44,34 +45,37 @@ class CourseSearchError(CourseSearchResult):
 
 @app.post("/api/login")
 async def login(login: Login):
-  s = requests.Session()
-  output = await open_login_page(s)
-  output = await log_in(s, output, login.username, login.password)
-  output = await professor_search(s, output, search_text="washburn, alexander")
-  print(output.courses)
-  
-  return LoginResult(
-    result="success",
-    courses=output.courses,
-  )
+  async with httpx.AsyncClient(follow_redirects=True) as client:
+    output = await open_login_page(client)
+    output = await log_in(client, output, login.username, login.password)
+    output = await professor_search(client, output, search_text="washburn, alexander")
+    print(output.courses)
+    
+    return LoginResult(
+      result="success",
+      courses=output.courses,
+    )
 
 @app.post("/api/courses")
 async def courses2(login: Login):  
   clear_log()
   data = fetch_data()
-  async with httpx.AsyncClient() as client:
-    s = requests.Session()
+  limiter = AiolimiterAsyncLimiter.create(Rate.create(magnitude=1, duration=0.1))
+  async with httpx.AsyncClient(
+    follow_redirects=True,
+    transport=AsyncRateLimitedTransport.create(limiter=limiter),
+  ) as client:
     try:
-      output = await open_login_page(s)
-      output = await log_in(s, output, login.username, login.password)
-      open_course_search_page_output = await open_course_search_page(s, output)
-      output = await select_dept(s, open_course_search_page_output)
-      output = await select_subject(s, open_course_search_page_output)
+      output = await open_login_page(client)
+      output = await log_in(client, output, login.username, login.password)
+      open_course_search_page_output = await open_course_search_page(client, output)
+      output = await select_dept(client, open_course_search_page_output)
+      output = await select_subject(client, open_course_search_page_output)
       course_number_options = ["12000", "12700"]
       did_fetch_max_rows = False
       for course_num in course_number_options:
         search_output = await course_search(
-          s,
+          client,
           open_course_search_page_output,
           data,
           department="CSCI-HTR",
@@ -97,25 +101,27 @@ async def courses2(login: Login):
         #     course_sections = output.course_sections
         #     evals_iter = open_eval_reports(s, cookie=cookie, course_sections=course_sections)
         eval_reports_output = await open_all_eval_reports(
-          s,
+          client,
           data=data,
           course_search_output=search_output,
           did_fetch_max_rows=did_fetch_max_rows,
         )
         did_fetch_max_rows = eval_reports_output.did_fetch_max_rows
         eval_reports: list[EvalReport] = []
-        l = 0
-        async for output in eval_reports_output.outputs:
+        # l = 0
+        for aoutput in eval_reports_output.outputs:
           # if output.cookie is not None:
             # cookie = output.cookie
+          output = await aoutput
           eval_report = output.eval_report
           eval_reports.append(eval_report)
           data.add(eval_report)
           data.write()
           data.write_json()
-          l += 1
-          if l >= 30:
-            break
+          log.info(f"Collected eval: {eval_report.formatted()}")
+          # l += 1
+          # if l >= 15:
+          #   break
         # log.warning(f"Found {len(search_output.course_sections)} evals for: CSCI {course_num}")
         
         # course_sections = search_output.course_sections
@@ -343,7 +349,7 @@ async def courses2(login: Login):
 # #     else:
 # #       raise e
     
-def json_default(obj: Any):
-  if hasattr(obj, "__dict__"):
-      return obj.__dict__
-  raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+# def json_default(obj: Any):
+#   if hasattr(obj, "__dict__"):
+#       return obj.__dict__
+#   raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")

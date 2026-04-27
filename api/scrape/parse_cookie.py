@@ -1,8 +1,8 @@
-import requests
+from httpx import Cookies
 
 from .cookie_name import cookie_name
 
-def parse_cookie(cookies: requests.sessions.RequestsCookieJar) -> str | None:
+def parse_cookie(cookies: Cookies) -> str | None:
   value = cookies.get(cookie_name)
   if value == None:
     return None

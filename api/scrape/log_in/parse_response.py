@@ -4,7 +4,7 @@ from .input import Input
 from ..parse_cookie import parse_cookie
 from ..scrape_error import ScrapeError
 from typing import Literal, override
-from requests.sessions import RequestsCookieJar
+from httpx import Cookies
 
 class Output:
   def __init__(
@@ -53,7 +53,7 @@ class HTMLError(ScrapeError):
   
 type MissingElement = Literal["data-for=P3_LINK", "pPageItemsProtected", "pPageSubmissionId"]
 
-def parse_response(res_text: str, cookies: RequestsCookieJar, input: Input) -> Output:
+def parse_response(res_text: str, cookies: Cookies, input: Input) -> Output:
   soup = BeautifulSoup(res_text, 'html.parser')
   ck_element = soup.find(attrs={'data-for': 'P3_LINK'})
   p_instance_element = soup.find(id='pInstance')

@@ -6,10 +6,10 @@ from .input import Input
 
 from .parse_response import Output, parse_response
 from .build_request import build_request
-import requests
+from httpx import AsyncClient
 
 async def fetch_max_rows(
-  s: requests.Session,
+  client: AsyncClient,
   data: Data,
   cookie: str,
   p_instance: str,
@@ -25,7 +25,7 @@ async def fetch_max_rows(
 
   request = build_request(input)
   log.info("Fetching max rows")
-  res = s.post(
+  res = await client.post(
     url=request.url,
     headers=request.headers,
     data=request.form_data,
@@ -35,8 +35,8 @@ async def fetch_max_rows(
     headers=request.headers,
     form_data=request.form_data,
     res=res,
-    cookies=s.cookies
+    cookies=client.cookies
   )
 
   # response = send_request(s, input)
-  return parse_response(res_text=res.text, cookies=s.cookies, data=data)
+  return parse_response(res_text=res.text, cookies=client.cookies, data=data)

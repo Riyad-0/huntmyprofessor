@@ -2,9 +2,7 @@ import json
 import os
 from typing import Any
 from pathlib import Path
-import requests
-from requests.sessions import RequestsCookieJar
-from requests.structures import CaseInsensitiveDict
+from httpx import Cookies, Response
 from urllib.parse import parse_qs
 import logging
 from logging import FileHandler, Formatter, StreamHandler
@@ -37,8 +35,8 @@ def read_log() -> Any:
 def log_get(
   url: str,
   headers: dict[str, str],
-  res: requests.Response,
-  cookies: RequestsCookieJar,
+  res: Response,
+  cookies: Cookies,
 ):
   data = read_log()
   data.append({
@@ -50,20 +48,18 @@ def log_get(
     "res": [res.text],
   })
   with open(log_file_path, "w") as log_file:
-    json.dump(data, log_file, indent=2, default=serialize_default)
+    json.dump(data, log_file, indent=2, default=json_default)
 
 def log_post(
   url: str,
   headers: dict[str, str],
   form_data: dict[str, str],
-  res: requests.Response,
-  cookies: RequestsCookieJar
+  res: Response,
+  cookies: Cookies,
 ):
-  if isinstance(res.request.body, str):    
-    parsed_body = parse_qs(res.request.body)
-    parsed_body = {k: v[0] for k, v in parsed_body.items()}
-  else:
-    parsed_body = res.request.body
+  raw_body = res.request.read().decode('utf-8')
+  parsed_body = parse_qs(raw_body)
+  parsed_body = {k: v[0] for k, v in parsed_body.items()}
   data = read_log()
   data.append({
     "my-url": url,
@@ -71,27 +67,25 @@ def log_post(
     "my-form-data": form_data,
     "url": res.request.url,
     "headers": res.request.headers,
-    "raw-body": res.request.body,
+    "raw-body": raw_body,
     "body": parsed_body,
     "cookies": cookies,
     "res": [res.text],
   })
   with open(log_file_path, "w") as log_file:
-    json.dump(data, log_file, indent=2, default=serialize_default)
+    json.dump(data, log_file, indent=2, default=json_default)
 
 def log_post_json(
   url: str,
   headers: dict[str, str],
   form_data: dict[str, str],
-  res: requests.Response,
-  cookies: RequestsCookieJar,
+  res: Response,
+  cookies: Cookies,
   res_json: Any,
 ):
-  if isinstance(res.request.body, str):    
-    parsed_body = parse_qs(res.request.body)
-    parsed_body = {k: v[0] for k, v in parsed_body.items()}
-  else:
-    parsed_body = res.request.body
+  raw_body = res.request.read().decode('utf-8')
+  parsed_body = parse_qs(raw_body)
+  parsed_body = {k: v[0] for k, v in parsed_body.items()}
   data = read_log()
   data.append({
     "my-url": url,
@@ -99,19 +93,19 @@ def log_post_json(
     "my-form-data": form_data,
     "url": res.request.url,
     "headers": res.request.headers,
-    "raw-body": res.request.body,
+    "raw-body": raw_body,
     "body": parsed_body,
     "cookies": cookies,
     "res": [res.text],
     "res_json": res_json,
   })
   with open(log_file_path, "w") as log_file:
-    json.dump(data, log_file, indent=2, default=serialize_default)
+    json.dump(data, log_file, indent=2, default=json_default)
 
-def serialize_default(x: Any):
-  if isinstance(x, CaseInsensitiveDict) or isinstance(x, RequestsCookieJar):
-    return dict(x) # type: ignore
-  raise TypeError(f"Object of type {type(x).__name__} is not JSON serializable")
+def json_default(obj: Any):
+  if hasattr(obj, "__dict__"):
+      return obj.__dict__
+  return f"[Object {obj.__class__.__name__}]"
 
 # def log(s: str):
 #   with open(log_file_path, "w") as log_file:

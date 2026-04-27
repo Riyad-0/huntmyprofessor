@@ -3,7 +3,7 @@ import json
 from typing import override
 
 from bs4 import BeautifulSoup
-from requests.sessions import RequestsCookieJar
+from httpx import Cookies
 
 from scrape.data import Data
 from scrape.eval_url import EvalUrl
@@ -162,7 +162,7 @@ def parse_paginate_codes(soup: BeautifulSoup, res_text: str) -> PaginateCodes | 
 
 def parse_response(
   res_text: str,
-  cookies: RequestsCookieJar,
+  cookies: Cookies,
   did_fetch_max_rows: bool,
   data: Data,
 ) -> Output:

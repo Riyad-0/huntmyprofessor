@@ -5,7 +5,7 @@ from ..parse_cookie import parse_cookie
 from ..scrape_error import ScrapeError
 from typing import override
 from dataclasses import dataclass
-from requests.sessions import RequestsCookieJar
+from httpx import Cookies
 
 @dataclass
 class SelectElementOption:
@@ -76,7 +76,7 @@ def get_ajax_identifier(res_text: str, pattern_id: str):
   ajax_identifier = json.loads(f'"{raw_ajax_identifier}"')
   return ajax_identifier
 
-def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+def parse_response(res_text: str, cookies: Cookies) -> Output:
   soup = BeautifulSoup(res_text, 'html.parser')
   pattern = '(function(){apex.widget.selectList("#P6_SUBJECT"'
   i = res_text.find(pattern)

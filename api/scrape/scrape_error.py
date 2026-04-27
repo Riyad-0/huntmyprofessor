@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
+from json import JSONDecodeError
 from typing import override
-
-import requests
 
 class ScrapeError(Exception):
   @abstractmethod
@@ -11,7 +10,7 @@ class ScrapeError(Exception):
 
 @dataclass
 class JsonError(ScrapeError):
-  e: requests.exceptions.JSONDecodeError
+  e: JSONDecodeError
 
   @override
   def message(self) -> str:

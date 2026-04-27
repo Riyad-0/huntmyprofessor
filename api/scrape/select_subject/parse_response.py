@@ -1,6 +1,5 @@
-from requests import Response
-from requests.sessions import RequestsCookieJar
-from requests.exceptions import JSONDecodeError
+from httpx import Cookies, Response
+from json import JSONDecodeError
 
 from scrape.log import log_post_json
 from .build_request import Request
@@ -11,7 +10,7 @@ from dataclasses import dataclass
 class Output:
   course_number_options: list[str]
 
-def parse_response(request: Request, res: Response, cookies: RequestsCookieJar) -> Output:
+def parse_response(request: Request, res: Response, cookies: Cookies) -> Output:
   try:
     res_json = res.json()
     log_post_json(

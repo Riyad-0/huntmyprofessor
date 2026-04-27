@@ -1,12 +1,14 @@
+import asyncio
 from dataclasses import dataclass
-from typing import AsyncGenerator
-import requests
+from typing import Awaitable
+from httpx import AsyncClient
 
 # from scrape import course_search, fetch_max_rows
 from scrape.eval_url_code import EvalUrlCode
 from scrape.eval_report import EvalReport, EvalReportPage
 from scrape.open_eval_report import open_eval_report
 from scrape.course_search.parse_response import CourseSection
+from collections.abc import Iterator
 
 @dataclass
 class Output:
@@ -48,24 +50,56 @@ class Output:
 #           break
 
 async def open_eval_reports(
-  s: requests.Session,
+  client: AsyncClient,
   cookie: str,
   course_sections: list[CourseSection],
-) -> AsyncGenerator[Output]:
-  for course_section in course_sections:
-    output = await open_eval_report(s, cookie=cookie, course_section=course_section)
-    yield Output(
-      cookie=output.cookie,
-      eval_report=EvalReport(
-        course=course_section.course,
-        section=course_section.section,
-        semester=course_section.semester,
-        professor=course_section.professor,
-        page=EvalReportPage(
-          url=EvalUrlCode.from_url(course_section.url),
-          score_sections=output.score_sections,
-          expected_grades=output.expected_grades
-        ),
-      ),
-    )
+) -> Iterator[Awaitable[Output]]:
+  async with asyncio.TaskGroup() as tg:
+    tasks = [
+      tg.create_task(open_eval_report_helper(
+        client,
+        cookie=cookie,
+        course_section=course_section
+      ))
+      for course_section in course_sections
+    ]
+  return asyncio.as_completed(tasks)
+  
+    # for course_section in course_sections:
+    #   tg.create_task(open_eval_report_helper(client, cookie=cookie, course_section=course_section))
+    #   output = await open_eval_report(client, cookie=cookie, course_section=course_section)
+    #   yield Output(
+    #     cookie=output.cookie,
+    #     eval_report=EvalReport(
+    #       course=course_section.course,
+    #       section=course_section.section,
+    #       semester=course_section.semester,
+    #       professor=course_section.professor,
+    #       page=EvalReportPage(
+    #         url=EvalUrlCode.from_url(course_section.url),
+    #         score_sections=output.score_sections,
+    #         expected_grades=output.expected_grades
+    #       ),
+    #     ),
+    #   )
 
+async def open_eval_report_helper(
+  client: AsyncClient,
+  cookie: str,
+  course_section: CourseSection,
+) -> Output:
+  output = await open_eval_report(client, cookie=cookie, course_section=course_section)
+  return Output(
+    cookie=output.cookie,
+    eval_report=EvalReport(
+      course=course_section.course,
+      section=course_section.section,
+      semester=course_section.semester,
+      professor=course_section.professor,
+      page=EvalReportPage(
+        url=EvalUrlCode.from_url(course_section.url),
+        score_sections=output.score_sections,
+        expected_grades=output.expected_grades
+      ),
+    ),
+  )

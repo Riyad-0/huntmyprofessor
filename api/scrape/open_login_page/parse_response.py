@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from requests.sessions import RequestsCookieJar
+from httpx import Cookies
 from ..parse_cookie import parse_cookie
 from ..scrape_error import ScrapeError
 from typing import override
@@ -35,7 +35,7 @@ class HTMLError(ScrapeError):
   def message(self) -> str:
     return loginPageHTMLErrorMessage
 
-def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+def parse_response(res_text: str, cookies: Cookies) -> Output:
   soup = BeautifulSoup(res_text, 'html.parser')
   p_instance_element = soup.find(id='pInstance')
   p_page_submission_id_element = soup.find(id='pPageSubmissionId')

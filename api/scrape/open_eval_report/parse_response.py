@@ -5,7 +5,7 @@ from ..parse_cookie import parse_cookie
 from ..scrape_error import ScrapeError
 from typing import override
 from dataclasses import dataclass
-from requests.sessions import RequestsCookieJar
+from httpx import Cookies
 
 @dataclass
 class SelectElementOption:
@@ -45,7 +45,7 @@ class HTMLError(ScrapeError):
       f"\nMissing: {self.missing}" + \
       "\nResponse text:\n" + self.res_text
 
-def parse_response(res_text: str, cookies: RequestsCookieJar) -> Output:
+def parse_response(res_text: str, cookies: Cookies) -> Output:
   soup = BeautifulSoup(res_text, 'html.parser')
 
   cookie = parse_cookie(cookies)

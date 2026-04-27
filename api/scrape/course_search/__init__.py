@@ -6,10 +6,10 @@ from .input import Input
 from .. import open_course_search_page
 from .build_request import build_request
 from .parse_response import Output, parse_response
-import requests
+from httpx import AsyncClient
 
 async def course_search(
-  s: requests.Session,
+  client: AsyncClient,
   open_course_search_page_output: open_course_search_page.Output,
   data: Data,
   department: str,
@@ -27,7 +27,7 @@ async def course_search(
 
   request = build_request(input)
   log.info(f"Searching: {subject} {course_num}")
-  res = s.post(
+  res = await client.post(
     url=request.url,
     headers=request.headers,
     data=request.form_data,
@@ -37,11 +37,11 @@ async def course_search(
     headers=request.headers,
     form_data=request.form_data,
     res=res,
-    cookies=s.cookies
+    cookies=client.cookies
   )
   output = parse_response(
     res_text=res.text,
-    cookies=s.cookies,
+    cookies=client.cookies,
     did_fetch_max_rows=did_fetch_max_rows,
     data=data,
   )

@@ -1,53 +1,18 @@
-from dataclasses import dataclass
-from typing import Literal
+# from scrape import open_login_page
+# from scrape import log_in
 
-import requests
-from scrape import open_login_page
-from scrape import log_in
-
-
-
-type State = Literal[
-  "start",
-  "opened login page",
-  "signed in"
-]
-
-type State2 = Start | str
-
-@dataclass
-class State3:
-  pass
-
-@dataclass
-class Start3(State3):
-  pass
-
-@dataclass
-class OpenedLoginPage3(State3):
-  output: open_login_page.Output
-
-@dataclass
-class Start:
-  tag: Literal["start"] = "start"
-
-@dataclass
-class OpenedLoginPage:
-  tag: Literal["oep"] = "oep"
-
-type A = int | str
 
 def main():
   print(
-    "1. Sign in",
-    "2. Professor search",
-    "3. Course search",
-    sep="\n"
+    "1. Scrape",
+    sep="\n",
   )
-  choice = input("Choice: ")
+  choice = int(input("Choice: "))
+  if choice != 1:
+    print("error: invalid choice")
+  
 
   # state: State3 = Start3()
-  # s = requests.Session()
 
   
   # match choice:

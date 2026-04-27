@@ -10,6 +10,9 @@ class EvalReport:
   professor: str
   page: EvalReportPage
 
+  def formatted(self) -> str:
+    return f"{self.course} Sec: {self.section}, {self.semester}, {self.professor}"
+
 @dataclass
 class EvalReportPage:
   url: EvalUrlCode
