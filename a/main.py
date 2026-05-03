@@ -1,2 +1,0 @@
-def june():
-  print('yoo')
