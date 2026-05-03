@@ -1,0 +1,57 @@
+from scrape import _parse_course_search_page
+from scrape._data import Data
+from scrape._log import log
+
+from .input import Input
+
+from .build_request import build_request
+from .parse_response import Output, parse_response
+from httpx import AsyncClient
+
+async def course_search(
+  client: AsyncClient,
+  open_course_search_page_output: _parse_course_search_page.CourseSearchPage,
+  data: Data,
+  department: str,
+  subject: str,
+  course_num: str,
+  did_fetch_max_rows: bool,
+) -> Output:
+  input = Input.from_course_search_page(
+    output=open_course_search_page_output,
+    data=data,
+    department=department,
+    subject=subject,
+    course_num=course_num,
+  )
+
+  course = f'{subject} {course_num}'
+
+  request = build_request(input)
+  log.info(f"Searching: {course}")
+  res = await client.post(
+    url=request.url,
+    headers=request.headers,
+    data=request.form_data,
+  )
+  # log_post(
+  #   url=request.url,
+  #   headers=request.headers,
+  #   form_data=request.form_data,
+  #   res=res,
+  #   cookies=client.cookies
+  # )
+  output = parse_response(
+    res_text=res.text,
+    cookies=client.cookies,
+    did_fetch_max_rows=did_fetch_max_rows,
+    data=data,
+  )
+  if output.eval_count is None:
+    log.warning(f"Couldn't count evals for: {course}")
+  else:
+    if output.more_than:
+      log.warning(f"Found more than {output.eval_count} evals for: {course}")
+    else:
+      log.info(f"Found {output.eval_count} evals for: {course}")
+  return output

@@ -4,10 +4,10 @@ from typing import Awaitable
 from httpx import AsyncClient
 
 # from scrape import course_search, fetch_max_rows
-from scrape.eval_url_code import EvalUrlCode
+from scrape._eval_url_code import EvalUrlCode
 from scrape._eval_report import EvalReport, EvalReportPage
-from scrape.open_eval_report import open_eval_report
-from scrape.course_search.parse_response import CourseSection
+from scrape._open_eval_report import open_eval_report
+from scrape._course_search.parse_response import CourseSection
 from collections.abc import Iterator
 
 @dataclass
@@ -49,7 +49,7 @@ class Output:
 #         if l >= 30:
 #           break
 
-async def open_eval_reports(
+async def open_eval_reports_helper(
   client: AsyncClient,
   cookie: str,
   course_sections: list[CourseSection],

@@ -1,0 +1,42 @@
+name: Scrape
+
+on:
+  workflow_dispatch:
+    inputs:
+      cookieValue:
+        description: 'Cookie value'
+        required: true
+      courseSearchPage:
+        description: 'Course search page'
+        required: true
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed to upload release.
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.14.2
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.14.2"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Scrape
+        run: |
+          python gh-scrape.py
+        env:
+          COOKIE_VALUE: ${{ inputs.cookieValue }}
+          COURSE_SEARCH_PAGE: ${{ inputs.courseSearchPage }}
+      - name: Update Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v1.0.0
+          files: |
+            data/evals.txt
+            data/schema.json
+          overwrite_files: true

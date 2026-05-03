@@ -6,12 +6,12 @@ from httpx_limiter import AsyncRateLimitedTransport, Rate
 from httpx_limiter.aiolimiter import AiolimiterAsyncLimiter
 from pydantic import BaseModel
 from scrape.open_all_eval_reports import open_all_eval_reports
-from scrape.eval_report import EvalReport
+from scrape._eval_report import EvalReport
 from scrape.data import fetch_data
 from scrape.log import clear_log, log
 from scrape.scrape_error import ScrapeError
 from scrape.open_login_page import open_login_page
-from scrape.log_in import log_in
+from scrape._log_in import log_in
 from scrape.professor_search import professor_search
 from scrape.open_course_search_page import open_course_search_page
 from scrape.select_dept import select_dept
@@ -71,7 +71,7 @@ async def courses2(login: Login):
       open_course_search_page_output = await open_course_search_page(client, output)
       output = await select_dept(client, open_course_search_page_output)
       output = await select_subject(client, open_course_search_page_output)
-      course_number_options = ["12000", "12700"]
+      course_number_options = ["12000"]
       did_fetch_max_rows = False
       for course_num in course_number_options:
         search_output = await course_search(
@@ -105,6 +105,7 @@ async def courses2(login: Login):
           data=data,
           course_search_output=search_output,
           did_fetch_max_rows=did_fetch_max_rows,
+          limit=20,
         )
         did_fetch_max_rows = eval_reports_output.did_fetch_max_rows
         eval_reports: list[EvalReport] = []

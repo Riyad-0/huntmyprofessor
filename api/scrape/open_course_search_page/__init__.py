@@ -4,7 +4,7 @@ from .input import Input
 
 from .. import log_in
 from .build_request import build_request
-from .parse_response import Output, parse_response
+from .parse_response import Output, parse_response, parse_response2
 from httpx import AsyncClient
 
 async def open_course_search_page(

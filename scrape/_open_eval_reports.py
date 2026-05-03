@@ -4,22 +4,22 @@ from collections.abc import Iterator
 
 from httpx import AsyncClient
 
-from scrape.data import Data
-from scrape import open_eval_reports
-from scrape.course_search.parse_response import NeedsPaginate, Parsed
-from scrape import course_search
-from scrape.fetch_max_rows import fetch_max_rows
+from scrape._data import Data
+from scrape import _open_eval_reports_helper
+from scrape._course_search.parse_response import NeedsPaginate, Parsed
+from scrape import _course_search
+from scrape._fetch_max_rows import fetch_max_rows
 
 
 @dataclass
 class Output:
-  outputs: Iterator[Awaitable[open_eval_reports.Output]]
+  outputs: Iterator[Awaitable[_open_eval_reports_helper.Output]]
   did_fetch_max_rows: bool
   cookie: str
 
-async def open_all_eval_reports(
+async def open_eval_reports(
   client: AsyncClient,
-  course_search_output: course_search.Output,
+  course_search_output: _course_search.Output,
   data: Data,
   did_fetch_max_rows: bool,
   limit: int | None,
@@ -27,7 +27,7 @@ async def open_all_eval_reports(
   cookie = course_search_output.cookie
   match course_search_output.parse_result:
     case Parsed(course_sections):
-      outputs = await open_eval_reports.open_eval_reports(
+      outputs = await _open_eval_reports_helper.open_eval_reports_helper(
         client,
         cookie=cookie,
         course_sections=course_sections,
@@ -46,7 +46,7 @@ async def open_all_eval_reports(
       if output.cookie is not None:
         cookie = output.cookie
       course_sections = output.course_sections
-      outputs = await open_eval_reports.open_eval_reports(
+      outputs = await _open_eval_reports_helper.open_eval_reports_helper(
         client,
         cookie=cookie,
         course_sections=course_sections,

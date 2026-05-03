@@ -1,0 +1,18 @@
+{
+  "Accept": "application/json, text/javascript, */*; q=0.01",
+  "Accept-Encoding": "gzip, deflate, br, zstd",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Connection": "keep-alive",
+  "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+  "Cookie": "",
+  "Origin": "https://orapp.hunter.cuny.edu",
+  "Referer": "https://orapp.hunter.cuny.edu/",
+  "Sec-Fetch-Dest": "empty",
+  "Sec-Fetch-Mode": "cors",
+  "Sec-Fetch-Site": "same-origin",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+  "X-Requested-With": "XMLHttpRequest",
+  "sec-ch-ua": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"",
+  "sec-ch-ua-mobile": "?0",
+  "sec-ch-ua-platform": "\"Windows\""
+}

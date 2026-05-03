@@ -54,4 +54,3 @@ def query():
   print(s)
 
 query()
-  
