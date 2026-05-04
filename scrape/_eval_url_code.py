@@ -15,7 +15,7 @@ class EvalUrlCode:
 
   # Takes a relative path of the form f?p=116:5:{pInstance}::::P5_STRM,P5_CLASS_NBR,P5_TECODE,P5_TYPE:1079,946,00,N&cs=174A380F03ABCA947D15A5D7D1C174FEC
   @staticmethod
-  def from_url(url: EvalUrl) -> 'EvalUrlCode':
+  def from_url(url: EvalUrl) -> EvalUrlCode:
     rel_path = url.rel_path
     i = rel_path.find(pattern)
     if i == -1:

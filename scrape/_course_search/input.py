@@ -21,7 +21,7 @@ class Input():
     department: str,
     subject: str,
     course_num: str,
-  ) -> 'Input':
+  ) -> Input:
     return Input(
       cookie=output.cookie,
       p_instance=output.p_instance,
