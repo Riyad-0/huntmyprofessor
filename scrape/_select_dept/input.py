@@ -13,7 +13,7 @@ class Input():
   @staticmethod
   def from_course_search_page(
     output: _parse_course_search_page.CourseSearchPage,
-  ) -> Input:
+  ) -> 'Input':
     return Input(
       ajax_identifier=output.dept_ajax_identifier,
       cookie=output.cookie,
