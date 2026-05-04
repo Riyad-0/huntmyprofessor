@@ -114,7 +114,7 @@ def parse_course_sections(soup: BeautifulSoup, data: Data) -> ParseCourseSection
       semester=semester,
       professor=professor,
     ):
-      log.info(f"Skipping already-scraped: {course} Sec: {section}, {semester}, {professor}")
+      log.debug(f"Skipping already-scraped: {course} Sec: {section}, {semester}, {professor}")
       continue
 
     course_sections.append(CourseSection(

@@ -24,7 +24,7 @@ class CookieError(MyError):
     return 'expected login cookie'
 
 async def log_in(email: str | None, password: str | None, cookie_value: str | None) -> Output:
-  hide_input = False
+  hide_input = True
   options = Options()
 
   # Disable ask-for-location prompt

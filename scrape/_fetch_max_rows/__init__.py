@@ -24,7 +24,7 @@ async def fetch_max_rows(
   )
 
   request = build_request(input)
-  log.info("Fetching max rows")
+  log.debug("Fetching max rows")
   res = await client.post(
     url=request.url,
     headers=request.headers,

@@ -46,7 +46,7 @@ async def main():
     course_search_page=course_search_page,
     cookie_value=cookie_value,
     data=data,
-    limit=50,
+    # limit=50,
   )
 
 def init_log():
@@ -59,7 +59,7 @@ def init_log():
   file_handler.setFormatter(formatter)
   console_handler = StreamHandler()
   console_handler.setFormatter(formatter)
-  log.setLevel(logging.DEBUG)
+  log.setLevel(logging.INFO)
   log.addHandler(file_handler)
   log.addHandler(console_handler)
 

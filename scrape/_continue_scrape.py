@@ -1,3 +1,5 @@
+import time
+
 from httpx import AsyncClient, TimeoutException
 from httpx_limiter import AsyncRateLimitedTransport, Rate # type: ignore
 from httpx_limiter.aiolimiter import AiolimiterAsyncLimiter # type: ignore
@@ -25,19 +27,30 @@ async def continue_scrape(
     follow_redirects=True,
     transport=AsyncRateLimitedTransport.create(limiter=limiter),
   ) as client:
-    await continue_scrape_inner(client, course_search_page, data, limit)
+    t = time.time()
+    count = await continue_scrape_inner(client, course_search_page, data, limit)
+    dt = time.time() - t
+    m, s = divmod(dt, 60)
+    h, m = divmod(m, 60)
+    duration = f'{round(s)}s'
+    if h > 0 or m > 0:
+      duration = f'{int(m)}m {duration}'
+    if h > 0:
+      duration = f'{int(h)}h {duration}'
+    log.info(f'Collected {count} evals in {duration}')
 
 async def continue_scrape_inner(
   client: AsyncClient,
   course_search_page: _parse_course_search_page.CourseSearchPage,
   data: Data,
   limit: int | None,
-):
+) -> int:
   output = await select_dept(client, course_search_page)
   output = await select_subject(client, course_search_page)
   course_number_options = output.course_number_options
   did_fetch_max_rows = False
   errors = 0
+  count = 0
   # unknown_exception: Exception | None = None
   for course_num in course_number_options:
     try:
@@ -89,8 +102,9 @@ async def continue_scrape_inner(
         data.add(eval_report)
         data.write()
         data.write_json(str(data.path))
-        log.info(f"Collected eval: {eval_report.formatted()}")
+        log.debug(f"Collected eval: {eval_report.formatted()}")
         i += 1
+        count += 1
       if limit is not None:
         limit = max(limit - i, 0)
     except Exception as e:
@@ -103,8 +117,9 @@ async def continue_scrape_inner(
         log.error(f'failed on: CSCI {course_num}; {e}')
         raise e
       if errors == 5:
-        return
+        return count
         # if unknown_exception is None:
         #   return
         # else:
         #   raise unknown_exception
+  return count

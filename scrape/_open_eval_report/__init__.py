@@ -14,7 +14,7 @@ async def open_eval_report(
 ) -> Output:
   input = Input(cookie=cookie, url=course_section.url)
   request = build_request(input)
-  log.info(f"Opening eval: {course_section.full_name()}, {course_section.semester}, {course_section.professor}")
+  log.debug(f"Opening eval: {course_section.full_name()}, {course_section.semester}, {course_section.professor}")
   res = await client.get(url=request.url, headers=request.headers, timeout=5)
   # log_get(
   #   url=request.url,
