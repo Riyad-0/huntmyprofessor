@@ -1,5 +1,5 @@
 @import "tailwindcss";
-/* @import "tw-animate-css";
+@import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -129,7 +129,7 @@
   html {
     @apply font-sans;
   }
-} */
+}
 
 :root {
   --background: #ffffff;
