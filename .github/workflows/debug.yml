@@ -11,7 +11,7 @@ on:
         required: true
 
 jobs:
-  run-scraper:
+  debug:
     runs-on: ubuntu-latest
     permissions:
       # TODO: needed?
