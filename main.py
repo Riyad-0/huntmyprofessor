@@ -38,8 +38,8 @@ async def inner():
     'HuntMyProfessor',
     '0. Quit',
     '1. Scrape',
-    '2. Scrape with GitHub (debug)',
-    '3. Scrape with GitHub (release)',
+    '2. Scrape on GitHub Actions (debug)',
+    '3. Scrape on GitHub Actions (release)',
     '4. Sync with remote',
     sep='\n',
   )
@@ -161,20 +161,20 @@ async def sync(data: Data):
   for eval in evals:
     year, season = semester_to_year_season(eval.semester)
     for course in db_courses:
-      if course['name'] == eval.course:
-        course_id = course['id']
+      if course['name'] == eval.course: # type: ignore
+        course_id = course['id'] # type: ignore
         break
     for section in db_sections:
-      if section['name'] == eval.section:
-        section_id = section['id']
+      if section['name'] == eval.section: # type: ignore
+        section_id = section['id'] # type: ignore
         break
     for semester in db_semesters:
-      if semester['year'] == year and semester['season'] == season:
-        semester_id = semester['id']
+      if semester['year'] == year and semester['season'] == season: # type: ignore
+        semester_id = semester['id'] # type: ignore
         break
     for professor in db_professors:
-      if professor['name'] == eval.professor:
-        professor_id = professor['id']
+      if professor['name'] == eval.professor: # type: ignore
+        professor_id = professor['id'] # type: ignore
         break
     q = eval.page.score_sections[0].questions[-1]
     response_count = 0
@@ -184,17 +184,17 @@ async def sync(data: Data):
       weighted_total += (i+1) * count
     rating = weighted_total / response_count
     a_count = eval.page.expected_grades[0]
-    wip_db_evals.append({
-      'course_id': course_id,
-      'section_id': section_id,
-      'semester_id': semester_id,
-      'professor_id': professor_id,
+    wip_db_evals.append({ # type: ignore
+      'course_id': course_id, # type: ignore
+      'section_id': section_id, # type: ignore
+      'semester_id': semester_id, # type: ignore
+      'professor_id': professor_id, # type: ignore
       'response_count': response_count,
       'rating': rating,
       'a_count': a_count,
     })
-  await db.table('eval').upsert(wip_db_evals, ignore_duplicates=True).execute()
-  log.info(f'Synced {len(wip_db_evals)} evals')
+  await db.table('eval').upsert(wip_db_evals, ignore_duplicates=True).execute() # type: ignore
+  log.info(f'Synced {len(wip_db_evals)} evals') # type: ignore
 
 def semester_to_year_season(semester: str) -> tuple[int, int]:
   split = semester.split()
