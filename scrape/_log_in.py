@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import override
 
+import pyotp
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -23,7 +24,7 @@ class CookieError(MyError):
   def message(self):
     return 'expected login cookie'
 
-async def log_in(email: str | None, password: str | None, cookie_value: str | None) -> Output:
+async def log_in(email: str | None, password: str | None, otp_key: str | None, cookie_value: str | None) -> Output:
   hide_input = True
   options = Options()
 
@@ -80,12 +81,17 @@ async def log_in(email: str | None, password: str | None, cookie_value: str | No
     submit_button.click()
 
   otp_text_box = wait.until(EC.presence_of_element_located((By.ID, 'otpValue|input')))
-  # submit_button = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'oj-button-button')))
 
   if hide_input:
     script = \
         "arguments[0].type = 'password';"
     driver.execute_script(script, otp_text_box) # pyright: ignore[reportUnknownMemberType]
+  
+  if otp_key is not None:
+    submit_button = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'oj-button-button')))
+    otp = pyotp.TOTP(otp_key).now()
+    otp_text_box.send_keys(otp)
+    submit_button.click()
 
   # otp_text_box.send_keys(otp)
   # submit_button.click()

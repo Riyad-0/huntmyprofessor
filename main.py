@@ -11,12 +11,13 @@ from dotenv import load_dotenv
 from httpx import AsyncClient
 import supabase
 
-from scrape import Data, EvalReport, MyError, continue_scrape, fetch_data, log, log_in, read_saved_cookie_value, save_cookie_value
+from scrape import Data, MyError, continue_scrape, fetch_data, log, log_in, read_saved_cookie_value
 
 data_folder_name = 'data'
 logs_folder_name = 'logs'
 log_file_name = 'hunt.log'
-workflow_file_name = 'scrape.yml'
+debug_workflow_file_name = 'debug.yml'
+release_workflow_file_name = 'release.yml'
 
 async def main():
   try:
@@ -37,11 +38,9 @@ async def inner():
     'HuntMyProfessor',
     '0. Quit',
     '1. Scrape',
-    '2. Rank professors',
-    '3. Rank courses',
-    '4. Recent professors for a course',
-    '5. Scrape with GitHub (release)',
-    '6. Sync with remote',
+    '2. Scrape with GitHub (debug)',
+    '3. Scrape with GitHub (release)',
+    '4. Sync with remote',
     sep='\n',
   )
   # print(data.count_course('CSCI 12000'))
@@ -56,17 +55,24 @@ async def inner():
     elif choice == '1':
       await scrape(data, mode='local')
     elif choice == '2':
-      rank_professors(data)
-    elif choice == '5':
-      await scrape(data, mode='github')
-    elif choice == '6':
+      await scrape(data, mode='github-debug')
+    elif choice == '3':
+      await scrape(data, mode='github-release')
+    elif choice == '4':
       await sync(data)
     else:
       print('error: invalid selection')
   
-async def scrape(data: Data, mode: Literal['local', 'github']):
+async def scrape(data: Data, mode: Literal['local', 'github-debug', 'github-release']):
+  limit = None
+  if mode == 'local':
+    wip_limit = input('Limit the number of reports to scrape, or leave blank for no limit\nLimit: ')
+    if wip_limit.strip() != '':
+      limit = int(wip_limit)
+    
   email = os.getenv('EMAIL')
   password = os.getenv('PASSWORD')
+  otp_key = os.getenv('OTP_KEY')
 
   saved_cookie_value = read_saved_cookie_value(str(data.path))
   # if saved_cookie_value is not None:
@@ -75,21 +81,23 @@ async def scrape(data: Data, mode: Literal['local', 'github']):
   #     return
     
   # otp = input('otp: ')
-  output = await log_in(email=email, password=password, cookie_value=saved_cookie_value)
+  output = await log_in(email=email, password=password, otp_key=otp_key, cookie_value=saved_cookie_value)
   # save_cookie_value(cookie_folder=str(data.path), cookie_value=output.cookie_value)
   if mode == 'local':
     await continue_scrape(
       course_search_page=output.course_search_page,
       cookie_value=output.cookie_value,
       data=data,
-      limit=50,
+      limit=limit,
     )
-  elif mode == 'github':
+  elif mode == 'github-debug' or mode == 'github-release':
+    match mode:
+      case 'github-debug': workflow_file_name = debug_workflow_file_name
+      case 'github-release': workflow_file_name = release_workflow_file_name
     repo = os.getenv('GITHUB_REPOSITORY')
     if repo is None:
       print("expected GITHUB_REPOSITORY environment variable")
       return
-
     gh_token = os.getenv('GITHUB_TOKEN')
     if gh_token is None:
       print("expected GITHUB_TOKEN environment variable")
@@ -97,8 +105,8 @@ async def scrape(data: Data, mode: Literal['local', 'github']):
     async with AsyncClient() as client:
       course_search_page = json.dumps(output.course_search_page, default=json_default)
       url = f'https://api.github.com/repos/{repo}/actions/workflows/{workflow_file_name}/dispatches'
-      print(f"Running workflow at: {url}")
-      await client.post(
+      print(f'Running workflow: {workflow_file_name}')
+      res = await client.post(
         url,
         json={
           'ref': 'master',
@@ -113,69 +121,12 @@ async def scrape(data: Data, mode: Literal['local', 'github']):
           'X-GitHub-Api-Version': '2026-03-10',
         },
       )
-
-def rank_professors(data: Data):
-  course = input('\nRank professors\nEnter a course, e.g. CSCI 26000\nLeave blank for overall rankings\nCourse: ')
-  reports = data.deserialize()
-  if course.strip() == '':
-    matching = reports
-  else:
-    matching = [report for report in reports if report.course == course]
-  query(matching)
-
-@dataclass
-class Fraction:
-  num: int
-  den: int
-
-  def add(self, other: Fraction):
-    self.num += other.num
-    self.den += other.den
-
-  def compute(self) -> float:
-    if self.den == 0:
-      return 0
-    return self.num / self.den
-
-@dataclass
-class Item:
-  name: str
-  grade_fraction: Fraction
-
-def query(evals: list[EvalReport]):
-  m: dict[str, Fraction] = {}
-  for eval_report in evals:
-    student_count = 0
-    for n in eval_report.page.expected_grades:
-      student_count += n
-    grade_recipient_count = eval_report.page.expected_grades[0]
-
-    frac = Fraction(
-      num=grade_recipient_count,
-      den=student_count,
-    )
-    
-    if eval_report.professor in m:
-      m[eval_report.professor].add(frac)
-    else:
-      m[eval_report.professor] = frac
-  
-  main_list: list[Item] = []
-  insuff_list: list[Item] = []
-  for name, grade_fraction in m.items():
-    item = Item(
-      name=name,
-      grade_fraction=grade_fraction,
-    )
-    if grade_fraction.den > 5:
-      main_list.append(item)
-    else:
-      insuff_list.append(item)
-  main_list.sort(key=lambda x: x.grade_fraction.compute(), reverse=True)
-  s = ""
-  for x in main_list:
-    s += f"{x.name}: {x.grade_fraction.compute():.0%} ({x.grade_fraction.num}/{x.grade_fraction.den})\n"
-  print(s)
+      if res.status_code == 200:
+        body = res.json()
+        run_id = body['workflow_run_id']
+        print(f"Running workflow at: https://github.com/{repo}/actions/runs/{run_id}")
+      else:
+        print(f"error: workflow {workflow_file_name} failed")
 
 async def sync(data: Data):
   supabase_url = os.getenv("SUPABASE_URL")

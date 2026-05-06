@@ -4,6 +4,7 @@ import { FaSort, FaSortDown, FaSortUp } from 'react-icons/fa';
 import { LuChevronDown, LuChevronsUpDown, LuChevronUp } from 'react-icons/lu';
 import { ComboboxWithClear } from './combobox';
 import { Input } from '@/components/ui/input';
+import { DbProfessor } from './db_professor';
 
 function randomProfessorRow() {
   return [
@@ -60,11 +61,18 @@ function new_header(name: string, kind: string, sortable: boolean) {
   return { name, kind, sortable };
 }
 
-function into_row(professor) {
-  
+function intoRow(rank: number, professor: DbProfessor) {
+  return [
+    rank,
+    formatName(professor.name),
+    Math.round((professor.rating - 1) / 6 * 100),
+    Math.round(professor.a_count / professor.response_count * 100),
+    professor.response_count,
+    professor.recent_courses,
+  ];
 }
 
-export default function Table({ rows }: { rows: any[] }) {
+export default function Table({ professors }: { professors: DbProfessor[] }) {
   // const cookieStore = await cookies()
   // const supabase = createClient(cookieStore)
   const [searchValue, setSearchValue] = useState('');
@@ -89,8 +97,8 @@ export default function Table({ rows }: { rows: any[] }) {
     return source.split(/\s+/).some(substr => substr.toLowerCase().includes(arg.toLowerCase()));
   }
 
-  const filteredRows = searchValue.trim() === '' ? rows : rows.filter(row => {
-    return row.some(value => {
+  const filtered = searchValue.trim() === '' ? professors : professors.filter(professor => {
+    return Object.values(professor).some(value => {
       if (Array.isArray(value)) {
         return value.some(x => searchText(x, searchValue));
       } else if (typeof value === 'string') {
@@ -100,15 +108,33 @@ export default function Table({ rows }: { rows: any[] }) {
       }
     });
   });
-  
-  const tableRows = filteredRows.toSorted((a, b) => {
+  const sorted = filtered.map((p, i) => intoRow(i+1, p)).toSorted((a, b) => {
     const wip_i = headers.findIndex(h => h.name == sortBy);
-    console.log(wip_i, sortBy);
     if (wip_i === -1) return;
-    const i = wip_i - 1
+    const i = wip_i;
     return (b[i] - a[i]) * sortOrder;
   });
-  console.log(sortBy);
+
+  // const filteredRows = searchValue.trim() === '' ? rows : rows.filter(row => {
+  //   return row.some(value => {
+  //     if (Array.isArray(value)) {
+  //       return value.some(x => searchText(x, searchValue));
+  //     } else if (typeof value === 'string') {
+  //       return searchText(value, searchValue);
+  //     } else {
+  //       return false;
+  //     }
+  //   });
+  // });
+  
+  // const tableRows = filteredRows.toSorted((a, b) => {
+  //   const wip_i = headers.findIndex(h => h.name == sortBy);
+  //   console.log(wip_i, sortBy);
+  //   if (wip_i === -1) return;
+  //   const i = wip_i - 1
+  //   return (b[i] - a[i]) * sortOrder;
+  // });
+  // console.log(sortBy);
 
   const onSearchChange: ChangeEventHandler<HTMLInputElement, HTMLInputElement> = e => {
     setSearchValue(e.target.value);
@@ -122,16 +148,15 @@ export default function Table({ rows }: { rows: any[] }) {
       </select> */}
       <div className='flex flex-col items-center mt-20'>
         <Input value={searchValue} onChange={onSearchChange} className='w-80' placeholder='Search' />
-        <table className='dark:text-white mt-16'>
+        <table className='mt-16'>
           <thead className=''>
-            <tr className='sticky top-0 bg-[background] border-b border-solid border-gray-300 dark:border-gray-700'>
+            <tr className='sticky top-0 bg-[background] border-b border-solid border-gray-300'>
               {headers.map(({ name, kind, sortable }) => {
                 // <FaSort />
                 // <FaSortUp />
                 // <FaSortDown />
                 function sort() {
                   if (sortBy === name) {
-                    console.log(name, sortBy, sortOrder);
                     setSort([name, -sortOrder as SortOrder]);
                   } else {
                     setSort([name, 1]);
@@ -140,7 +165,7 @@ export default function Table({ rows }: { rows: any[] }) {
                 const colSortOrder = name === sortBy ? sortOrder : 0;
               
                 const inner = sortable ?
-                  <button onClick={sort} className='px-4 py-2 flex gap-x-1 w-full items-center justify-start hover:bg-gray-100 dark:hover:bg-gray-800'>
+                  <button onClick={sort} className='px-4 py-2 flex gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
                     <SortIcon sortOrder={colSortOrder} />
                     <div>{name}</div>
                   </button> :
@@ -154,12 +179,12 @@ export default function Table({ rows }: { rows: any[] }) {
               })}
             </tr>
           </thead>
-          <tbody className='dark:text-gray-200'>
-            {tableRows.map((row, i) => (
-              <tr className='border-b border-solid border-gray-300 dark:border-gray-700 align-top'>
-                {[i+1, ...row].map((value, j) => {
+          <tbody className=''>
+            {sorted.map((row, i) => (
+              <tr key={row[1]} className='border-b border-solid border-gray-300 align-top'>
+                {row.map((value, j) => {
                   const kind = headers[j].kind;
-                  return (<Cell value={value} kind={kind} />);
+                  return (<Cell key={headers[j].name} value={value} kind={kind} />);
                   // return (
                   //   kind == 'number' ?
                   //     <td className='text-end px-4 py-2'>{value}</td> :
@@ -173,12 +198,26 @@ export default function Table({ rows }: { rows: any[] }) {
       
       </div>
     </>
-    // <ul className='dark:text-white'>
+    // <ul className=''>
     //   {courses?.map((course) => (
     //     <li key={course.id}>{course.name}</li>
     //   ))}
     // </ul>
   )
+}
+
+function formatName(name: string): string {
+  const [last, firstAndMiddle] = name.split(", ");
+  const split = firstAndMiddle.split(' ');
+  split.push(last);
+  return split.map(s => toTitleCase(s.trim())).join(' ');
+}
+
+function toTitleCase(name: string): string {
+  if (name.length === 0) {
+    return '';
+  }
+  return name[0].toUpperCase() + name.slice(1).toLowerCase();
 }
 
 function Cell({ value, kind }: { value: any, kind: string }) {
@@ -205,8 +244,8 @@ type SortOrder = 1 | -1 | 0;
 
 function SortIcon({ sortOrder }: { sortOrder: SortOrder }) {
   switch (sortOrder) {
-     case -1: return <LuChevronDown className='dark:text-gray-300' />
-     case 1: return <LuChevronUp className='dark:text-gray-300' />
-     case 0: return <LuChevronsUpDown className='dark:text-gray-300' />
+     case -1: return <LuChevronDown className='' />
+     case 1: return <LuChevronUp className='' />
+     case 0: return <LuChevronsUpDown className='' />
   }
 }

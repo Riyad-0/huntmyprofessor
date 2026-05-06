@@ -1,1 +1,0 @@
-cookie_name = "ORA_WWV_APP_116"

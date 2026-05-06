@@ -1,4 +1,4 @@
-name: Scrape
+name: Debug
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ jobs:
   run-scraper:
     runs-on: ubuntu-latest
     permissions:
-      # Needed to upload release.
+      # TODO: needed?
       contents: write
     steps:
       - uses: actions/checkout@v4
@@ -28,15 +28,18 @@ jobs:
           pip install -r requirements.txt
       - name: Scrape
         run: |
-          python gh-scrape.py
+          python gh-main.py
         env:
           COOKIE_VALUE: ${{ inputs.cookieValue }}
           COURSE_SEARCH_PAGE: ${{ inputs.courseSearchPage }}
-      - name: Update Release
-        uses: softprops/action-gh-release@v3
+          MODE: 'debug'
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: v1.0.0
-          files: |
+          name: debug-artifact
+          path: |
             data/evals.txt
             data/schema.json
-          overwrite_files: true
+            data/evals.json
+            logs/hunt.log
+          retention-days: 5

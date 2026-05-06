@@ -20,6 +20,10 @@ async def main():
   if course_search_page is None:
     print("expected COURSE_SEARCH_PAGE environment variable")
     return
+  mode = os.getenv("MODE")
+  if mode is None:
+    print("expected MODE environment variable")
+    return
   course_search_page = json.loads(course_search_page)
   course_search_page = CourseSearchPage(
     cookie=course_search_page['cookie'],
@@ -37,7 +41,7 @@ async def main():
     ],
   )
 
-  init_log()
+  init_log(mode)
   dir_name = os.path.dirname(__file__)
   data_path = os.path.join(dir_name, data_folder_name)
   data = fetch_data(data_path)
@@ -46,10 +50,12 @@ async def main():
     course_search_page=course_search_page,
     cookie_value=cookie_value,
     data=data,
-    # limit=50,
+    limit=25,
   )
+  if mode == 'debug':
+    data.write_json(data_path)
 
-def init_log():
+def init_log(mode: str):
   dir_name = os.path.dirname(__file__)
   logs_path = Path(os.path.join(dir_name, logs_folder_name))
   logs_path.mkdir(parents=True, exist_ok=True)
@@ -59,7 +65,10 @@ def init_log():
   file_handler.setFormatter(formatter)
   console_handler = StreamHandler()
   console_handler.setFormatter(formatter)
-  log.setLevel(logging.INFO)
+  if mode == 'debug':
+    log.setLevel(logging.DEBUG)
+  else:
+    log.setLevel(logging.INFO)
   log.addHandler(file_handler)
   log.addHandler(console_handler)
 
