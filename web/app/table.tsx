@@ -184,6 +184,9 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
             {sorted.map((row, i) => (
               <tr key={row[1]} className='border-b border-solid border-gray-300 align-top'>
                 {row.map((value, j) => {
+                  if (j === 0) {
+                    value = i + 1;
+                  }
                   const kind = headers[j].kind;
                   return (<Cell key={headers[j].name} value={value} kind={kind} />);
                   // return (
