@@ -28,14 +28,8 @@ async def main():
     else:
       raise e
 
-async def inner():
-  load_dotenv()
-  init_log()
-  dir_name = os.path.dirname(__file__)
-  data_path = os.path.join(dir_name, data_folder_name)
-  data = fetch_data(data_path)
+def print_menu():
   print(
-    'HuntMyProfessor',
     '0. Quit',
     '1. Scrape',
     '2. Scrape on GitHub Actions (debug)',
@@ -43,6 +37,15 @@ async def inner():
     '4. Sync with remote',
     sep='\n',
   )
+
+async def inner():
+  load_dotenv()
+  init_log()
+  dir_name = os.path.dirname(__file__)
+  data_path = os.path.join(dir_name, data_folder_name)
+  data = fetch_data(data_path)
+  print('HuntMyProfessor')
+  print_menu()
   # print(data.count_course('CSCI 12000'))
   while True:
     choice = input('Choose: ').strip()
@@ -54,12 +57,16 @@ async def inner():
       return
     elif choice == '1':
       await scrape(data, mode='local')
+      print_menu()
     elif choice == '2':
       await scrape(data, mode='github-debug')
+      print_menu()
     elif choice == '3':
       await scrape(data, mode='github-release')
+      print_menu()
     elif choice == '4':
       await sync(data)
+      print_menu()
     else:
       print('error: invalid selection')
   

@@ -95,8 +95,11 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
   ];
 
   function searchText(source: string, arg: string) {
+    if (arg.trim().length === 0) {
+      return true;
+    }
     // const sourceSplit = source.split(/\s+/);
-    const orOps = arg.split(',').map(x => x.trim());
+    const orOps = arg.split(',').map(x => x.trim()).filter(x => x.length > 0);
     return orOps.some(orOp => {
       const andOps = orOp.split(/\s+/).filter(x => x.length > 0);
       return andOps.every(argPiece => source.toLowerCase().includes(argPiece.toLowerCase()));
