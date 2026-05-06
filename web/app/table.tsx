@@ -177,11 +177,11 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
                 const colSortOrder = name === sortBy ? sortOrder : 0;
               
                 const inner = sortable ?
-                  <button onClick={sort} className='sm:px-4 xs:px-2 px-1 sm:py-2 py-1 flex gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
+                  <button onClick={sort} className='sm:px-2 px-1 sm:py-2 py-1 flex sm:gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
                     <SortIcon sortOrder={colSortOrder} />
                     <div>{name}</div>
                   </button> :
-                  <div className='sm:px-4 xs:px-2 px-1 sm:py-2 py-1'>{name}</div>;
+                  <div className='sm:px-2 px-1 sm:py-2 py-1'>{name}</div>;
                 // const inner = (<button className='flex items-center dark:hover:bg-gray-800'><div>{name}</div>{sortOption}</button>)
                 return (
                   kind == 'number' ?
@@ -238,8 +238,8 @@ function toTitleCase(name: string): string {
 function Cell({ value, kind }: { value: any, kind: string }) {
   return (
     kind == 'number' ?
-      <td className='text-end sm:px-4 xs:px-2 px-1 sm:py-2 py-1'><CellInner value={value}></CellInner></td> :
-      <td className='text-start sm:px-4 xs:px-2 px-1 sm:py-2 py-1'><CellInner value={value}></CellInner></td>
+      <td className='text-end sm:px-2 px-1 sm:py-2 py-1'><CellInner value={value}></CellInner></td> :
+      <td className='text-start sm:px-2 px-1 sm:py-2 py-1'><CellInner value={value}></CellInner></td>
   );
 }
 
@@ -259,8 +259,8 @@ type SortOrder = 1 | -1 | 0;
 
 function SortIcon({ sortOrder }: { sortOrder: SortOrder }) {
   switch (sortOrder) {
-     case -1: return <LuChevronDown className='' />
-     case 1: return <LuChevronUp className='' />
-     case 0: return <LuChevronsUpDown className='' />
+     case -1: return <LuChevronDown className='sm:block hidden' />
+     case 1: return <LuChevronUp className='sm:block hidden' />
+     case 0: return <LuChevronsUpDown className='sm:block hidden' />
   }
 }
