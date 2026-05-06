@@ -77,7 +77,7 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
   // const cookieStore = await cookies()
   // const supabase = createClient(cookieStore)
   const [searchValue, setSearchValue] = useState('');
-  const [[sortBy, sortOrder], setSort] = useState<[string, SortOrder]>(['Rating', 1]);
+  const [[sortBy, sortOrder], setSort] = useState<[string, SortOrder]>(['Rating', -1]);
 
   const courses = [{
 
@@ -95,7 +95,18 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
   ];
 
   function searchText(source: string, arg: string) {
-    return source.split(/\s+/).some(substr => substr.toLowerCase().includes(arg.toLowerCase()));
+    // const sourceSplit = source.split(/\s+/);
+    const orOps = arg.split(',').map(x => x.trim());
+    return orOps.some(orOp => {
+      const andOps = orOp.split(/\s+/).filter(x => x.length > 0);
+      return andOps.every(argPiece => source.toLowerCase().includes(argPiece.toLowerCase()));
+    });
+    // const argSplit = arg.split(/\s+/).filter(s => s.length > 0);
+    // if (argSplit.length === 0) {
+    //   return true;
+    // }
+    // return argSplit.every(argPiece => source.toLowerCase().includes(argPiece.toLowerCase()));
+    // return source.split(/\s+/).some(substr => substr.toLowerCase().includes(arg.toLowerCase()));
   }
 
   const filtered = searchValue.trim() === '' ? professors : professors.filter(professor => {
@@ -113,7 +124,7 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
     const wip_i = headers.findIndex(h => h.name == sortBy);
     if (wip_i === -1) return;
     const i = wip_i;
-    return (b[i] - a[i]) * sortOrder;
+    return (a[i] - b[i]) * sortOrder;
   });
 
   // const filteredRows = searchValue.trim() === '' ? rows : rows.filter(row => {
@@ -160,7 +171,7 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
                   if (sortBy === name) {
                     setSort([name, -sortOrder as SortOrder]);
                   } else {
-                    setSort([name, 1]);
+                    setSort([name, -1]);
                   }
                 }
                 const colSortOrder = name === sortBy ? sortOrder : 0;
