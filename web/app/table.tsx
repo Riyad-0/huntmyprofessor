@@ -1,6 +1,6 @@
 // @ts-nocheck
 'use client'
-import { ChangeEventHandler, useState } from 'react';
+import { ChangeEventHandler, JSX, useState } from 'react';
 import { FaSort, FaSortDown, FaSortUp } from 'react-icons/fa';
 import { LuChevronDown, LuChevronsUpDown, LuChevronUp } from 'react-icons/lu';
 import { ComboboxWithClear } from './combobox';
@@ -54,10 +54,6 @@ function randomResponseCount() {
   }
 }
 
-interface Header {
-
-}
-
 function new_header(name: string, kind: string, sortable: boolean) {
   return { name, kind, sortable };
 }
@@ -71,6 +67,39 @@ function intoRow(rank: number, professor: DbProfessor) {
     professor.response_count,
     professor.recent_courses,
   ];
+}
+
+type Header =
+ | 'Rank'
+ | 'Professor'
+ | 'Rating'
+ | "A's"
+ | 'Responses'
+ | 'Recent courses';
+
+function abbreviate(value: any): any {
+  if (typeof value != 'string') {
+    return value;
+  }
+  switch (value) {
+    // case 'Professor': return 'Prof.';
+    case 'Rank': return 'Rk';
+    case 'Rating': return 'Rat.';
+    case 'Responses': return 'Resp.';
+    case 'Recent courses': return 'Cour.';
+    default: {
+      if (value.includes('-')) return value;
+      const split = value.split(' ').map(x => {
+        const l = 9;
+        if (x.length > l) {
+          return x.slice(0, l) + '-' + x.slice(l);
+        } else {
+          return x;
+        }
+      });
+      return split.join(' ');
+    }
+  }
 }
 
 export default function Table({ professors }: { professors: DbProfessor[] }) {
@@ -161,59 +190,65 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
         <option>test</option>
         <option>test2</option>
       </select> */}
-      <div className='flex flex-col items-center mt-20'>
-        <Input value={searchValue} onChange={onSearchChange} className='w-80' placeholder='Search' />
-        <table className='mt-16'>
-          <thead className=''>
-            <tr className='sticky top-0 bg-[background] border-b border-solid border-gray-300'>
-              {headers.map(({ name, kind, sortable }) => {
-                // <FaSort />
-                // <FaSortUp />
-                // <FaSortDown />
-                function sort() {
-                  if (sortBy === name) {
-                    setSort([name, -sortOrder as SortOrder]);
-                  } else {
-                    setSort([name, -1]);
+      <div className='flex flex-col items-center sm:items-center mt-20'>
+        <Input value={searchValue} onChange={onSearchChange} className='w-80 max-w-full mx-1' placeholder='Search' />
+        <div className='overflow-x-auto max-w-full'>
+          <table className='mt-16'>
+            <thead className=''>
+              <tr className='sticky top-0 bg-[background] border-b border-solid border-gray-300'>
+                {headers.map(({ name, kind, sortable }) => {
+                  // <FaSort />
+                  // <FaSortUp />
+                  // <FaSortDown />
+                  function sort() {
+                    if (sortBy === name) {
+                      setSort([name, -sortOrder as SortOrder]);
+                    } else {
+                      setSort([name, -1]);
+                    }
                   }
-                }
-                const colSortOrder = name === sortBy ? sortOrder : 0;
-              
-                const inner = sortable ?
-                  <button onClick={sort} className='sm:px-2 px-1 sm:py-2 py-1 flex sm:gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
-                    <SortIcon sortOrder={colSortOrder} />
-                    <div>{name}</div>
-                  </button> :
-                  <div className='sm:px-2 px-1 sm:py-2 py-1'>{name}</div>;
-                // const inner = (<button className='flex items-center dark:hover:bg-gray-800'><div>{name}</div>{sortOption}</button>)
-                return (
-                  kind == 'number' ?
-                    <th className='text-end' key={name}>{inner}</th> :
-                    <th className='text-start' key={name}>{inner}</th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody className=''>
-            {sorted.map((row, i) => (
-              <tr key={row[1]} className='border-b border-solid border-gray-300 align-top'>
-                {row.map((value, j) => {
-                  if (j === 0) {
-                    value = i + 1;
-                  }
-                  const kind = headers[j].kind;
-                  return (<Cell key={headers[j].name} value={value} kind={kind} />);
-                  // return (
-                  //   kind == 'number' ?
-                  //     <td className='text-end px-4 py-2'>{value}</td> :
-                  //     <td className='text-start px-4 py-2'>{value}</td>
-                  // );
+                  const colSortOrder = name === sortBy ? sortOrder : 0;
+                  const abbrev = abbreviate(name);
+                
+                  const inner = sortable ?
+                    <button onClick={sort} className='sm:px-2 px-1 sm:py-2 py-1 flex sm:gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
+                      <SortIcon sortOrder={colSortOrder} />
+                      <div className='hidden sm:block'>{name}</div>
+                      <div className='sm:hidden'>{abbreviate(name)}</div>
+                    </button> :
+                    <div className='sm:px-2 px-1 sm:py-2 py-1'>
+                      <div className='hidden sm:block'>{name}</div>
+                      <div className='sm:hidden'>{abbreviate(name)}</div>
+                    </div>;
+                  // const inner = (<button className='flex items-center dark:hover:bg-gray-800'><div>{name}</div>{sortOption}</button>)
+                  return (
+                    kind == 'number' ?
+                      <th className='text-end' key={name}>{inner}</th> :
+                      <th className='text-start' key={name}>{inner}</th>
+                  );
                 })}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      
+            </thead>
+            <tbody className=''>
+              {sorted.map((row, i) => (
+                <tr key={row[1]} className='border-b border-solid border-gray-300 align-top'>
+                  {row.map((value, j) => {
+                    if (j === 0) {
+                      value = i + 1;
+                    }
+                    const kind = headers[j].kind;
+                    return (<Cell key={headers[j].name} value={value} kind={kind} />);
+                    // return (
+                    //   kind == 'number' ?
+                    //     <td className='text-end px-4 py-2'>{value}</td> :
+                    //     <td className='text-start px-4 py-2'>{value}</td>
+                    // );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </>
     // <ul className=''>
@@ -250,11 +285,11 @@ function CellInner({ value }: { value: any }) {
   if (Array.isArray(value)) {
     return (
     <div className='flex flex-col'>
-      {value.map(x => <div key={x}>{x}</div>)}
+      {value.map(x => <div key={x}>{<AllowAbbrev value={x} />}</div>)}
     </div>
     );
   } else {
-    return (<div>{value}</div>);
+    return (<div><AllowAbbrev value={value} /></div>);
   }
 }
 
@@ -266,4 +301,13 @@ function SortIcon({ sortOrder }: { sortOrder: SortOrder }) {
      case 1: return <LuChevronUp className='sm:block hidden' />
      case 0: return <LuChevronsUpDown className='sm:block hidden' />
   }
+}
+
+function AllowAbbrev({ value }: { value: any }) {
+  return (
+    <>
+      <div className='hidden sm:block'>{value}</div>
+      <div className='sm:hidden'>{abbreviate(value)}</div>
+    </>
+  );
 }

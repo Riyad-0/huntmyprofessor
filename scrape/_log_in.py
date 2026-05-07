@@ -71,7 +71,6 @@ async def log_in(email: str | None, password: str | None, otp_key: str | None, c
       "arguments[1].style.color = 'black';"
 
     driver.execute_script(script, email_text_box, password_text_box) # pyright: ignore[reportUnknownMemberType]
-  # driver.execute_script(script, password_text_box) # pyright: ignore[reportUnknownMemberType]
   
   if email is not None:
     email_text_box.send_keys(email)
@@ -92,10 +91,6 @@ async def log_in(email: str | None, password: str | None, otp_key: str | None, c
     otp = pyotp.TOTP(otp_key).now()
     otp_text_box.send_keys(otp)
     submit_button.click()
-
-  # otp_text_box.send_keys(otp)
-  # submit_button.click()
-  # wait = WebDriverWait(driver, 90)
 
   wait.until(EC.presence_of_element_located((By.ID, 'pPageItemsProtected')))
 
