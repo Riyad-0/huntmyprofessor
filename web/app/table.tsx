@@ -282,6 +282,10 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
 }
 
 function formatName(name: string): string {
+  // const specialCase = formatNameSpecialCase(name);
+  // if (specialCase !== null) {
+  //   return specialCase;
+  // }
   const [last, firstAndMiddle] = name.split(", ");
   const wipSplit = firstAndMiddle.split(' ').map((x, i) => {
     if (i > 0 && x.length === 1) {
@@ -294,9 +298,17 @@ function formatName(name: string): string {
   // const wipName = firstAndMiddle + ' ' + last;
   // const split = wipName.split(' ');
   const split = wipSplit;
-  return split.map(s => toTitleCase(s.trim())).join(' ');
+  return split.map(s => {
+    return s.split('-').map(toTitleCase).join('-');
+  }).join(' ');
 }
 
+// function formatNameSpecialCase(name: string): string | null {
+//   switch (name) {
+//     case 'ELSAYED, ALI': return 'Ali ElSayed';
+//     default: return null;
+//   }
+// }
 function toTitleCase(name: string): string {
   if (name.length === 0) {
     return '';
