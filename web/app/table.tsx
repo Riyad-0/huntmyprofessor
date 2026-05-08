@@ -213,8 +213,8 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
         <option>test</option>
         <option>test2</option>
       </select> */}
-      <div className='flex flex-col items-center sm:items-center mt-20'>
-        <div className='px-1 w-80 max-w-full'>
+      <div className='flex flex-col items-center sm:items-center'>
+        <div className='px-1 w-80 max-w-full mt-20'>
           <Input value={searchValue} onChange={onSearchChange} className='' placeholder='Search' />
         </div>
         <div className='overflow-x-auto max-w-full'>
