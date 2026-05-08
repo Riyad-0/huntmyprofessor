@@ -85,26 +85,49 @@ function abbreviate(value: any): any {
     // case 'Professor': return 'Prof.';
     case 'Rank': return 'Rk';
     case 'Rating': return 'Rat.';
-    case 'Responses': return 'Resp.';
+    case 'Responses': return 'n';
     case 'Recent courses': return 'Cour.';
     default: {
-      if (value.includes('-')) return value;
-      const split = value.split(' ').map(x => {
-        const l = 9;
-        if (x.length > l) {
-          return x.slice(0, l) + '-' + x.slice(l);
-        } else {
-          return x;
-        }
-      });
-      return split.join(' ');
+      return value;
+      // if (value.includes('-')) return value;
+      // const split = value.split(' ').map(x => {
+      //   const l = 10;
+      //   if (x.length > l) {
+      //     return x.slice(0, l) + '-\n' + x.slice(l);
+      //   } else {
+      //     return x;
+      //   }
+      // });
+      // return split.join(' ');
     }
   }
+}
+export interface DbProfessor {
+  id: number;
+  name: string;
+  rating: number;
+  a_count: number;
+  response_count: number;
+  recent_courses: string[];
 }
 
 export default function Table({ professors }: { professors: DbProfessor[] }) {
   // const cookieStore = await cookies()
   // const supabase = createClient(cookieStore)
+  // const fakeProfessor = {
+  //   name: 'SHOKRI, MOHAMMADMAHDI',
+  //   rating: 6,
+  //   a_count: 120,
+  //   response_count: 201,
+  //   recent_courses: ['CSCI 12000']
+  // };
+  // professors = [];
+  // for (let i = 0; i < 80; i++) {
+  //   professors.push({
+  //     id: i,
+  //     ...fakeProfessor
+  //   });
+  // }
   const [searchValue, setSearchValue] = useState('');
   const [[sortBy, sortOrder], setSort] = useState<[string, SortOrder]>(['Rating', -1]);
 
@@ -191,9 +214,11 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
         <option>test2</option>
       </select> */}
       <div className='flex flex-col items-center sm:items-center mt-20'>
-        <Input value={searchValue} onChange={onSearchChange} className='w-80 max-w-full mx-1' placeholder='Search' />
+        <div className='px-1 w-80 max-w-full'>
+          <Input value={searchValue} onChange={onSearchChange} className='' placeholder='Search' />
+        </div>
         <div className='overflow-x-auto max-w-full'>
-          <table className='mt-16'>
+          <table className='mt-16 text-sm sm:text-base'>
             <thead className=''>
               <tr className='sticky top-0 bg-[background] border-b border-solid border-gray-300'>
                 {headers.map(({ name, kind, sortable }) => {
@@ -211,12 +236,12 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
                   const abbrev = abbreviate(name);
                 
                   const inner = sortable ?
-                    <button onClick={sort} className='sm:px-2 px-1 sm:py-2 py-1 flex sm:gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
+                    <button onClick={sort} className='sm:px-2 px-0.5 sm:py-2 py-1 flex sm:gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
                       <SortIcon sortOrder={colSortOrder} />
                       <div className='hidden sm:block'>{name}</div>
                       <div className='sm:hidden'>{abbreviate(name)}</div>
                     </button> :
-                    <div className='sm:px-2 px-1 sm:py-2 py-1'>
+                    <div className='sm:px-2 px-0.5 sm:py-2 py-1'>
                       <div className='hidden sm:block'>{name}</div>
                       <div className='sm:hidden'>{abbreviate(name)}</div>
                     </div>;
@@ -261,8 +286,17 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
 
 function formatName(name: string): string {
   const [last, firstAndMiddle] = name.split(", ");
-  const split = firstAndMiddle.split(' ');
-  split.push(last);
+  const wipSplit = firstAndMiddle.split(' ').map((x, i) => {
+    if (i > 0 && x.length === 1) {
+      return x + '.';
+    } else {
+      return x;
+    }
+  });
+  wipSplit.push(...last.split(' '));
+  // const wipName = firstAndMiddle + ' ' + last;
+  // const split = wipName.split(' ');
+  const split = wipSplit;
   return split.map(s => toTitleCase(s.trim())).join(' ');
 }
 
@@ -276,8 +310,8 @@ function toTitleCase(name: string): string {
 function Cell({ value, kind }: { value: any, kind: string }) {
   return (
     kind == 'number' ?
-      <td className='text-end sm:px-2 px-1 sm:py-2 py-1'><CellInner value={value}></CellInner></td> :
-      <td className='text-start sm:px-2 px-1 sm:py-2 py-1'><CellInner value={value}></CellInner></td>
+      <td className='text-end sm:px-2 px-0.5 sm:py-2 py-1'><CellInner value={value}></CellInner></td> :
+      <td className='text-start sm:px-2 px-0.5 sm:py-2 py-1'><CellInner value={value}></CellInner></td>
   );
 }
 
@@ -297,9 +331,9 @@ type SortOrder = 1 | -1 | 0;
 
 function SortIcon({ sortOrder }: { sortOrder: SortOrder }) {
   switch (sortOrder) {
-     case -1: return <LuChevronDown className='sm:block hidden' />
-     case 1: return <LuChevronUp className='sm:block hidden' />
-     case 0: return <LuChevronsUpDown className='sm:block hidden' />
+     case -1: return <LuChevronDown className='sm:block ' />
+     case 1: return <LuChevronUp className='sm:block ' />
+     case 0: return <LuChevronsUpDown className='sm:block ' />
   }
 }
 
@@ -310,4 +344,29 @@ function AllowAbbrev({ value }: { value: any }) {
       <div className='sm:hidden'>{abbreviate(value)}</div>
     </>
   );
+}
+
+// function AllowAbbrev({ value }: { value: any }) {
+//   const wipAbbrev = abbreviate(value);
+//   let abbrev = wipAbbrev;
+//   if (typeof wipAbbrev === 'string') {
+//     const split = wipAbbrev.split('\n');
+//     const abbrev = split.map((x, i) => {
+//       if (i > 0) {
+//         return (<><br />{x}</>);
+//       } else {
+//         return <>{x}</>
+//       }
+//     });
+//   }
+//   return (
+//     <>
+//       <div className='hidden sm:block'>{value}</div>
+//       <div className='sm:hidden'>{}</div>
+//     </>
+//   );
+// }
+
+function Abbrev({ value }: { value: any }) {
+
 }
