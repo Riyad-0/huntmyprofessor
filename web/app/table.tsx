@@ -54,8 +54,12 @@ function randomResponseCount() {
   }
 }
 
-function new_header(name: string, kind: string, sortable: boolean) {
-  return { name, kind, sortable };
+class Header {
+  constructor(
+    public readonly name: string,
+    public readonly kind: string,
+    public readonly sortable: boolean,
+  ) {}
 }
 
 function intoRow(rank: number, professor: DbProfessor) {
@@ -69,13 +73,13 @@ function intoRow(rank: number, professor: DbProfessor) {
   ];
 }
 
-type Header =
- | 'Rank'
- | 'Professor'
- | 'Rating'
- | "A's"
- | 'Responses'
- | 'Recent courses';
+// type Header =
+//  | 'Rank'
+//  | 'Professor'
+//  | 'Rating'
+//  | "A's"
+//  | 'Responses'
+//  | 'Recent courses';
 
 function abbreviate(value: any): any {
   if (typeof value != 'string') {
@@ -101,14 +105,6 @@ function abbreviate(value: any): any {
       // return split.join(' ');
     }
   }
-}
-export interface DbProfessor {
-  id: number;
-  name: string;
-  rating: number;
-  a_count: number;
-  response_count: number;
-  recent_courses: string[];
 }
 
 export default function Table({ professors }: { professors: DbProfessor[] }) {
@@ -138,12 +134,12 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
   // const { data: courses } = await supabase.from('course').select()
   // console.log(courses)
   const headers = [
-    new_header('Rank', 'number', false),
-    new_header('Professor', 'text', false),
-    new_header('Rating', 'number', true),
-    new_header("A's", 'number', true),
-    new_header('Responses', 'number', true),
-    new_header('Recent courses', 'text', false),
+    new Header('Rank', 'number', false),
+    new Header('Professor', 'text', false),
+    new Header('Rating', 'percent', true),
+    new Header("A's", 'percent', true),
+    new Header('Responses', 'number', true),
+    new Header('Recent courses', 'text', false),
   ];
 
   function searchText(source: string, arg: string) {
@@ -222,35 +218,36 @@ export default function Table({ professors }: { professors: DbProfessor[] }) {
             <thead className=''>
               <tr className='sticky top-0 bg-[background] border-b border-solid border-gray-300'>
                 {headers.map(({ name, kind, sortable }) => {
+                  return (<Th key={name} name={name} kind={kind} sortable={sortable} sortBy={sortBy} sortOrder={sortOrder} setSort={setSort} />);
                   // <FaSort />
                   // <FaSortUp />
                   // <FaSortDown />
-                  function sort() {
-                    if (sortBy === name) {
-                      setSort([name, -sortOrder as SortOrder]);
-                    } else {
-                      setSort([name, -1]);
-                    }
-                  }
-                  const colSortOrder = name === sortBy ? sortOrder : 0;
-                  const abbrev = abbreviate(name);
+                  // function sort() {
+                  //   if (sortBy === name) {
+                  //     setSort([name, invert(sortOrder)]);
+                  //   } else {
+                  //     setSort([name, -1]);
+                  //   }
+                  // }
+                  // const colSortOrder = name === sortBy ? sortOrder : 0;
+                  // // const abbrev = abbreviate(name);
                 
-                  const inner = sortable ?
-                    <button onClick={sort} className='sm:px-2 px-0.5 sm:py-2 py-1 flex sm:gap-x-1 w-full items-center justify-start hover:bg-gray-100'>
-                      <SortIcon sortOrder={colSortOrder} />
-                      <div className='hidden sm:block'>{name}</div>
-                      <div className='sm:hidden'>{abbreviate(name)}</div>
-                    </button> :
-                    <div className='sm:px-2 px-0.5 sm:py-2 py-1'>
-                      <div className='hidden sm:block'>{name}</div>
-                      <div className='sm:hidden'>{abbreviate(name)}</div>
-                    </div>;
-                  // const inner = (<button className='flex items-center dark:hover:bg-gray-800'><div>{name}</div>{sortOption}</button>)
-                  return (
-                    kind == 'number' ?
-                      <th className='text-end' key={name}>{inner}</th> :
-                      <th className='text-start' key={name}>{inner}</th>
-                  );
+                  // const inner = sortable ?
+                  //   <button onClick={sort} className='sm:px-2 px-0.5 sm:py-2 py-1 flex sm:gap-x-1 w-full items-end justify-start hover:bg-gray-100'>
+                  //     <SortIcon sortOrder={colSortOrder} />
+                  //     <div className='hidden sm:block'>{name}</div>
+                  //     <div className='sm:hidden'>{abbreviate(name)}</div>
+                  //   </button> :
+                  //   <div className='sm:px-2 px-0.5 sm:py-2 py-1'>
+                  //     <div className='hidden sm:block'>{name}</div>
+                  //     <div className='sm:hidden'>{abbreviate(name)}</div>
+                  //   </div>;
+                  // // const inner = (<button className='flex items-center dark:hover:bg-gray-800'><div>{name}</div>{sortOption}</button>)
+                  // return (
+                  //   kind === 'number' || kind === 'percent' ?
+                  //     <th className='text-end align-bottom' key={name}>{inner}</th> :
+                  //     <th className='text-start align-bottom' key={name}>{inner}</th>
+                  // );
                 })}
               </tr>
             </thead>
@@ -307,37 +304,152 @@ function toTitleCase(name: string): string {
   return name[0].toUpperCase() + name.slice(1).toLowerCase();
 }
 
-function Cell({ value, kind }: { value: any, kind: string }) {
+function Th({ name, kind, sortable, sortBy, sortOrder, setSort }: {
+  name: string,
+  kind: string,
+  sortable: boolean,
+  sortBy: string,
+  sortOrder: SortOrder,
+  setSort: (_: [name: string, order: SortOrder]) => void,
+}) {
+  // function sort() {
+  //   if (sortBy === name) {
+  //     setSort([name, invert(sortOrder)]);
+  //   } else {
+  //     setSort([name, -1]);
+  //   }
+  // }
+  // const colSortOrder = name === sortBy ? sortOrder : 0;
+  // const abbrev = abbreviate(name);
+
+  // const inner = sortable ?
+  //   <button onClick={sort} className='sm:px-2 px-0.5 sm:py-2 py-1 flex sm:gap-x-1 w-full items-end justify-start hover:bg-gray-100'>
+  //     <SortIcon sortOrder={colSortOrder} />
+  //     <div className='hidden sm:block'>{name}</div>
+  //     <div className='sm:hidden'>{abbreviate(name)}</div>
+  //   </button> :
+  //   <div className='sm:px-2 px-0.5 sm:py-2 py-1'>
+  //     <div className='hidden sm:block'>{name}</div>
+  //     <div className='sm:hidden'>{abbreviate(name)}</div>
+  //   </div>;
+  // const inner = (<button className='flex items-center dark:hover:bg-gray-800'><div>{name}</div>{sortOption}</button>)
+  // const textAlign = kind === 'number' || kind === 'percent' ? 'text-end' : 'text-start';
   return (
-    kind == 'number' ?
-      <td className='text-end sm:px-2 px-0.5 sm:py-2 py-1'><CellInner value={value}></CellInner></td> :
-      <td className='text-start sm:px-2 px-0.5 sm:py-2 py-1'><CellInner value={value}></CellInner></td>
+    kind === 'number' || kind === 'percent' ?
+      <NumberTh name={name} kind={kind} sortable={sortable} sortBy={sortBy} sortOrder={sortOrder} setSort={setSort} /> :
+      <TextTh name={name} kind={kind} sortable={sortable} sortBy={sortBy} sortOrder={sortOrder} setSort={setSort} />
   );
 }
 
-function CellInner({ value }: { value: any }) {
+function NumberTh({ name, kind, sortable, sortBy, sortOrder, setSort }: {
+  name: string,
+  kind: string,
+  sortable: boolean,
+  sortBy: string,
+  sortOrder: SortOrder,
+  setSort: (_: [name: string, order: SortOrder]) => void,
+}) {
+  return (
+    <th className='text-end align-bottom'>
+      <ThContent name={name} kind={kind} sortable={sortable} sortBy={sortBy} sortOrder={sortOrder} setSort={setSort} />
+    </th>
+  );
+}
+
+function TextTh({ name, kind, sortable, sortBy, sortOrder, setSort }: {
+  name: string,
+  kind: string,
+  sortable: boolean,
+  sortBy: string,
+  sortOrder: SortOrder,
+  setSort: (_: [name: string, order: SortOrder]) => void,
+}) {
+  return (
+    <th className='text-start align-bottom'>
+      <ThContent name={name} kind={kind} sortable={sortable} sortBy={sortBy} sortOrder={sortOrder} setSort={setSort} />
+    </th>
+  );
+}
+
+function ThContent({ name, kind, sortable, sortBy, sortOrder, setSort }: {
+  name: string,
+  kind: string,
+  sortable: boolean,
+  sortBy: string,
+  sortOrder: SortOrder,
+  setSort: (_: [name: string, order: SortOrder]) => void,
+}) {
+  function sort() {
+    if (sortBy === name) {
+      setSort([name, invert(sortOrder)]);
+    } else {
+      setSort([name, -1]);
+    }
+  }
+
+  if (sortable) {
+    const colSortOrder = name === sortBy ? sortOrder : 0;  // const abbrev = abbreviate(name);
+    return (
+      <button onClick={sort} className='sm:px-2 px-0.5 sm:py-2 py-1 flex sm:gap-x-1 w-full items-end justify-start hover:bg-gray-100'>
+        <SortIcon sortOrder={colSortOrder} />
+        <div className='hidden sm:flex flex-col justify-end'>
+          {kind === 'percent' ? <div className='font-normal text-gray-500 text-[0.875em]'>%</div> : <></>}
+          <div>{name}</div>
+        </div>
+        <div className='sm:hidden flex flex-col justify-end'>
+          {kind === 'percent' ? <div className='font-normal text-gray-500 text-[0.875em]'>%</div> : <></>}
+          <div>{abbreviate(name)}</div>
+        </div>
+      </button>
+    );
+  } else {
+    return (
+      <div className='sm:px-2 px-0.5 sm:py-2 py-1'>
+        <div className='hidden sm:block'>{name}</div>
+        <div className='sm:hidden'>{abbreviate(name)}</div>
+      </div>
+    );
+  }
+}
+
+function Cell({ value, kind }: { value: any, kind: string }) {
+  return (
+    kind === 'number' || kind === 'percent' ?
+      <td className='text-end sm:px-2 px-0.5 sm:py-2 py-1'><CellInner value={value} kind={kind}></CellInner></td> :
+      <td className='text-start sm:px-2 px-0.5 sm:py-2 py-1'><CellInner value={value} kind={kind}></CellInner></td>
+  );
+}
+
+function CellInner({ value, kind }: { value: any, kind: string }) {
   if (Array.isArray(value)) {
     return (
     <div className='flex flex-col'>
-      {value.map(x => <div key={x}>{<AllowAbbrev value={x} />}</div>)}
+      {value.map(x => <div key={x}>{<AllowAbbrev value={x} kind={kind} />}</div>)}
     </div>
     );
   } else {
-    return (<div><AllowAbbrev value={value} /></div>);
+    return (<div><AllowAbbrev value={value} kind={kind} /></div>);
   }
 }
 
 type SortOrder = 1 | -1 | 0;
 
+function invert(sortOrder: SortOrder): SortOrder {
+  return -sortOrder as SortOrder;
+}
+
 function SortIcon({ sortOrder }: { sortOrder: SortOrder }) {
   switch (sortOrder) {
-     case -1: return <LuChevronDown className='sm:block ' />
-     case 1: return <LuChevronUp className='sm:block ' />
-     case 0: return <LuChevronsUpDown className='sm:block ' />
+     case -1: return <LuChevronDown className='mb-[.25em]' />
+     case 1: return <LuChevronUp className='mb-[.25em]' />
+     case 0: return <LuChevronsUpDown className='mb-[.25em]' />
   }
 }
 
-function AllowAbbrev({ value }: { value: any }) {
+function AllowAbbrev({ value, kind }: { value: any, kind: string }) {
+  // if (kind === 'percent') {
+  //   value += '%';
+  // }
   return (
     <>
       <div className='hidden sm:block'>{value}</div>
