@@ -1,7 +1,7 @@
-import { createClient } from '@/utils/supabase/server'
-import { SupabaseClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { FaSort, FaSortDown, FaSortUp } from 'react-icons/fa';
+// import { createClient } from '@/utils/supabase/server'
+import { SupabaseClient, createClient } from '@supabase/supabase-js'
+// import { cookies } from 'next/headers'
+// import { FaSort, FaSortDown, FaSortUp } from 'react-icons/fa';
 import Table from './table';
 
 // async function getCourses(supabase: SupabaseClient) {
@@ -18,8 +18,11 @@ console.log("woohoo");
 
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  // const cookieStore = await cookies();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
   const professors = (await getProfessors(supabase)).data;
   // const rows = professors === null ?
   //   [] :
