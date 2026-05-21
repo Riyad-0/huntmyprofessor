@@ -46,12 +46,8 @@ async def inner():
   data = fetch_data(data_path)
   print('HuntMyProfessor')
   print_menu()
-  # print(data.count_course('CSCI 12000'))
   while True:
     choice = input('Choose: ').strip()
-    # if choice not in ['0', '1', '2', '3', '4']:
-    #   print('error: invalid selection')
-    #   continue
     if choice == '0':
       print('Bye')
       return
@@ -87,7 +83,6 @@ async def scrape(data: Data, mode: Literal['local', 'github-debug', 'github-rele
   #   if result == 'success':
   #     return
     
-  # otp = input('otp: ')
   output = await log_in(email=email, password=password, otp_key=otp_key, cookie_value=saved_cookie_value)
   # save_cookie_value(cookie_folder=str(data.path), cookie_value=output.cookie_value)
   if mode == 'local':

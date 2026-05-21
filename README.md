@@ -34,7 +34,7 @@ An example `.env` file:
 EMAIL=<SECRET>@login.cuny.edu
 PASSWORD=<SECRET>
 OTP_KEY=<SECRET>
-GITHUB_REPOSITORY=Riyad-0/huntmyprofessor
+GITHUB_REPOSITORY=<username>/<repo>
 GITHUB_TOKEN=github_pat_<SECRET>
 SUPABASE_URL=https://<SECRET>.supabase.co
 SUPABASE_KEY=sb_secret_<SECRET>
@@ -51,10 +51,9 @@ When CUNY tells you to enter the Secret Key into your authenticator app, make su
 
 Follow the remaining steps of the guide to add this Authentication Factor to your authenticator app and verify it.
 
-Make sure you set the new Authentication Factor as Default, or else CUNY will reject its passcodes. Since you can only have one
-Default, this means your old Authentication Factor's passcodes will stop working. I simply deleted my old one afterward.
+Make sure you set the new Authentication Factor as Default, or else CUNY will reject its passcodes. Since you can only have one Default, this means your old Authentication Factor's passcodes will stop working. I just deleted my old one afterward.
 
-CUNY seems to distinguish Authentication Factors based on their Friendly Name, which I learned the hard way. I suggest not reusing the same Friendly Name as your existing Authentication Factor. Deleting it first might prevent issues, though I was not willing to take the risk.
+CUNY seems to distinguish Authentication Factors based on their Friendly Name, which I learned the hard way. I suggest not reusing the same Friendly Name as your existing Authentication Factor. Deleting it first might prevent issues, but I was not willing to take the risk.
 
 The OTP is generated using the PyOTP library like this:
 ``` python
@@ -64,7 +63,7 @@ pyotp.TOTP(otp_key).now()
 
 ## `scrape/`
 - `_select_dept/` - "select" the Computer Science department
-- `_select_subject/` - "select" CSCI to get back a list of course numbers
+- `_select_subject/` - "select" CSCI to get back a list of CSCI course numbers
 - `_course_search/` - submit a course search
 - `_fetch_max_rows/` - request 2000 rows instead of 20 in the search results
 - `_open_eval_report/` - "click" the link to the eval report
