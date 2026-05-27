@@ -1,5 +1,7 @@
 # HuntMyProfessor
 
+HuntMyProfessor is a web scraper for Hunter College's evaluation reports website. Students can see how their peers have rated their professors and rank them by rating or A's given out. The scraped data can be viewed at the project's website: https://huntmyprofessor.vercel.app.
+
 ## Modules
 - `main.py` - the scraping CLI
 - `gh-main.py` - the entry point for GitHub Actions
