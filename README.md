@@ -22,6 +22,10 @@ HuntMyProfessor
 Choose: 1
 ```
 
+Outputs:
+- `data/schema.json` - lists all the course numbers, professors, semesters, and sections
+- `data/evals.txt` - a bit-packed binary representation of the evaluation report data; contains ids that reference the fields stored in the schema
+
 ## Environment Variables
 `EMAIL`, `PASSWORD`, and `OTP_KEY` will allow automatic insertion of all login details.
 
@@ -74,3 +78,7 @@ The following modules contain the scraping code to perform tasks a user would no
 ## GitHub Actions Workflows
 - `.github/workflows/debug.yml` - debug, for testing a small number of reports
 - `.github/workflows/release.yml` - scrape the whole site
+
+Running the debug workflow uploads an artifact containing the evaluation report data and the logs.
+
+Running the release workflow uploads the data as a release.
