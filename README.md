@@ -64,6 +64,7 @@ pyotp.TOTP(otp_key).now()
 ```
 
 ## `scrape/`
+The following modules contain the scraping code to perform tasks a user would normally do to access evaluation reports manually.
 - `_select_dept/` - "select" the Computer Science department
 - `_select_subject/` - "select" CSCI to get back a list of CSCI course numbers
 - `_course_search/` - submit a course search
